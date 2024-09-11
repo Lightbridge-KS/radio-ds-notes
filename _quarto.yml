@@ -1,0 +1,29 @@
+project:
+  type: book
+
+book:
+  title: "Radiology DataScience"
+  author: "Kittipos Sirivongrungson"
+  date: "9/11/2024"
+  repo-url: https://github.com/Lightbridge-KS/radio-ds-notes
+  site-url: https://radio-ds-notes-lightbridge.netlify.app
+  chapters:
+    - index.qmd
+    - part: Basic
+      chapters: 
+        - "content/radio-data-str.qmd"
+    - references.qmd
+
+
+bibliography: references.bib
+
+format:
+  html:
+    theme: cosmo
+    toc-depth: 4
+
+execute: 
+  freeze: auto
+
+
+

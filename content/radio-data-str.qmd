@@ -1,0 +1,114 @@
+---
+title: Data Structure
+---
+
+
+## DICOM
+
+A **DICOM file** (Digital Imaging and Communications in Medicine) is a standardized file format used to store medical imaging data, along with detailed metadata that describes the image and other related information. The DICOM standard ensures that images and related data are consistently structured, allowing for interoperability across different imaging devices and medical systems (e.g., PACS). Here’s a breakdown of how data and metadata are organized in a DICOM file:
+
+### 1. **File Structure Overview**
+Each DICOM file is structured into two main components:
+   - **Header (Metadata)**: Contains information about the image, the patient, the acquisition settings, and other related details.
+   - **Pixel Data (Image)**: The actual image data (or voxel data in the case of 3D scans like MRI or CT) is stored here.
+
+### 2. **DICOM Header (Metadata)**
+The DICOM header contains **metadata** that describes the image and provides context. This metadata is organized into **Data Elements**, which are composed of:
+   - **Tag**: A unique identifier for each element, written as a hexadecimal number (e.g., (0010,0010) for the patient’s name).
+   - **Value Representation (VR)**: Specifies the data type for the value (e.g., text, integer, float).
+   - **Length**: Indicates the size of the data element in bytes.
+   - **Value**: The actual information being stored (e.g., the patient’s name, scanner settings, slice location, etc.).
+
+#### Common Metadata Categories:
+- **Patient Information**:
+  - Patient’s name, ID, birth date, sex (Tags like (0010,0010) for patient’s name).
+  
+- **Study Information**:
+  - Study date, description, referring physician, etc. (e.g., (0008,0020) for Study Date).
+  
+- **Series Information**:
+  - Series number, series description, modality type (e.g., MRI, CT).
+  
+- **Image Acquisition Parameters**:
+  - TR, TE, flip angle, slice thickness, b-values (for DWI), and other imaging parameters.
+  
+- **Image Information**:
+  - Slice location, pixel spacing, image orientation, image dimensions (e.g., (0028,0010) for the number of rows in the image, (0028,0011) for the number of columns).
+
+#### Example of DICOM Header:
+
+```
+(0010,0010) - Patient's Name - John Doe
+(0010,0020) - Patient's ID - 12345
+(0008,0020) - Study Date - 2023-09-01
+(0008,103E) - Series Description - Brain MRI
+(0020,0013) - Image Number - 5
+```
+
+### 3. **Pixel Data (Image Data)**
+The actual medical image data (whether 2D or 3D) is stored in the **Pixel Data** element, identified by tag **(7FE0,0010)**. This part contains the raw image data, which can be structured in different formats (grayscale or color, compressed or uncompressed).
+
+#### Characteristics of Pixel Data:
+- **Pixel dimensions**: Defined by metadata tags, such as:
+  - **Rows** (0028,0010): The number of rows in the image.
+  - **Columns** (0028,0011): The number of columns in the image.
+- **Pixel Spacing**: The physical distance between pixels (defined by tag (0028,0030)).
+- **Bits Allocated**: Describes the bit depth (the number of bits used per pixel, typically 8, 12, or 16 bits for grayscale medical images).
+- **Rescale Slope and Rescale Intercept**: Used to convert raw pixel data into meaningful units (e.g., Hounsfield Units in CT scans).
+
+### 4. **Data Organization in a DICOM File**
+The data in a DICOM file is organized in **Data Sets**, which follow a hierarchical structure. Each Data Set contains **Data Elements**. Data Elements are composed of:
+- **Tag**: The unique identifier for that piece of data (like a label).
+- **Value Representation (VR)**: The type of data (e.g., Integer, String, Float, etc.).
+- **Value**: The actual data, such as patient information, image dimensions, etc.
+
+### Example of DICOM Data Element:
+```
+(Tag)      (VR)      (Length)   (Value)
+(0010,0010) PN        8          John Doe
+(0010,0020) LO        6          12345
+(0008,0020) DA        8          20230901
+```
+In this example:
+- **(0010,0010)**: Tag for "Patient Name" (PN).
+- **(0010,0020)**: Tag for "Patient ID" (LO – Long String).
+- **(0008,0020)**: Tag for "Study Date" (DA – Date).
+
+### 5. **Handling 3D or Multislice Data (Volumes)**
+For volumetric imaging like CT or MRI, multiple DICOM files are typically generated, where each file corresponds to a single **slice** of the entire volume. Each file contains:
+- Its own **header** describing slice location, thickness, and orientation.
+- The **pixel data** for that specific slice.
+
+Software like PACS or 3D Slicer will aggregate these individual files and combine the slices to create a full 3D volume for viewing or analysis.
+
+### 6. **Encapsulation and Compression**
+DICOM allows for encapsulating images in different formats and compressing pixel data (e.g., JPEG or JPEG 2000). The choice of compression is noted in the metadata, ensuring that systems can correctly decode the data.
+
+### 7. **DICOM Metadata Example in a Simple MRI Scan**
+
+Here’s a simplified example of what you might see in a brain MRI DICOM file:
+
+- **Patient's Name**: John Doe (0010,0010)
+- **Modality**: MR (0008,0060)
+- **Slice Thickness**: 5 mm (0018,0050)
+- **Pixel Spacing**: 0.9 mm x 0.9 mm (0028,0030)
+- **Image Orientation**: Specifies how the image is oriented in space (0020,0037)
+- **Rows and Columns**: 512 x 512 (0028,0010 and 0028,0011)
+- **Pixel Data**: Contains the actual image data (7FE0,0010)
+
+### 8. **DICOM File Size**
+
+The size of a DICOM file varies depending on:
+
+- **Image resolution**: Higher resolution means more pixel data.
+- **Number of slices**: For volumetric sequences (like MRI or CT), each slice generates a separate DICOM file.
+- **Bit depth**: More bits per pixel (e.g., 16-bit vs. 8-bit) increases the file size.
+- **Compression**: Use of lossy or lossless compression affects the size of the pixel data.
+
+### Summary
+
+- **DICOM Header (Metadata)**: Contains descriptive data such as patient information, study parameters, and image acquisition details.
+- **Pixel Data (Image Data)**: Stores the actual image data for a slice, organized as a matrix of pixel intensity values.
+- **Multiple Files per Volume**: For 3D scans like MRI or CT, each slice has its own DICOM file, and these files are combined by the viewing software to create a complete 3D volume.
+
+This structure makes DICOM files both versatile and complex, allowing them to carry detailed metadata along with high-quality medical images.
