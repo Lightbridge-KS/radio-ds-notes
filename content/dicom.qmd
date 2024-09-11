@@ -9,15 +9,18 @@ A **DICOM file** (Digital Imaging and Communications in Medicine) is a standardi
 
 ### 1. **File Structure Overview**
 Each DICOM file is structured into two main components:
-   - **Header (Metadata)**: Contains information about the image, the patient, the acquisition settings, and other related details.
-   - **Pixel Data (Image)**: The actual image data (or voxel data in the case of 3D scans like MRI or CT) is stored here.
+
+- **Header (Metadata)**: Contains information about the image, the patient, the acquisition settings, and other related details.
+
+- **Pixel Data (Image)**: The actual image data (or voxel data in the case of 3D scans like MRI or CT) is stored here.
 
 ### 2. **DICOM Header (Metadata)**
 The DICOM header contains **metadata** that describes the image and provides context. This metadata is organized into **Data Elements**, which are composed of:
-   - **Tag**: A unique identifier for each element, written as a hexadecimal number (e.g., (0010,0010) for the patient’s name).
-   - **Value Representation (VR)**: Specifies the data type for the value (e.g., text, integer, float).
-   - **Length**: Indicates the size of the data element in bytes.
-   - **Value**: The actual information being stored (e.g., the patient’s name, scanner settings, slice location, etc.).
+
+- **Tag**: A unique identifier for each element, written as a hexadecimal number (e.g., (0010,0010) for the patient’s name).
+- **Value Representation (VR)**: Specifies the data type for the value (e.g., text, integer, float).
+- **Length**: Indicates the size of the data element in bytes.
+- **Value**: The actual information being stored (e.g., the patient’s name, scanner settings, slice location, etc.).
 
 #### Common Metadata Categories:
 - **Patient Information**:
@@ -163,6 +166,7 @@ print("Pixel Data Shape:", first_slice['PixelData'].shape)
 ```
 
 ### Explanation of Data Structure:
+
 1. **List of Dictionaries**: Each dictionary in the `mri_sequence` list represents a single DICOM file or slice in the MRI sequence.
 2. **Metadata**:
    - **FileName**: The file name of the DICOM slice.
@@ -180,6 +184,7 @@ print("Pixel Data Shape:", first_slice['PixelData'].shape)
 
 ### Accessing and Processing:
 You can easily access the pixel data for each slice and perform operations such as:
+
 - Viewing the shape of the image slice (`first_slice['PixelData'].shape`).
 - Performing image processing using libraries like **NumPy** or **SciPy**.
 - Using visualization tools like **matplotlib** to display the slices.
