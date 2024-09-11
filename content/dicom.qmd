@@ -1,9 +1,9 @@
 ---
-title: Data Structure
+title: DICOM
 ---
 
 
-## DICOM
+## Overview of DICOM
 
 A **DICOM file** (Digital Imaging and Communications in Medicine) is a standardized file format used to store medical imaging data, along with detailed metadata that describes the image and other related information. The DICOM standard ensures that images and related data are consistently structured, allowing for interoperability across different imaging devices and medical systems (e.g., PACS). Here’s a breakdown of how data and metadata are organized in a DICOM file:
 
@@ -112,3 +112,86 @@ The size of a DICOM file varies depending on:
 - **Multiple Files per Volume**: For 3D scans like MRI or CT, each slice has its own DICOM file, and these files are combined by the viewing software to create a complete 3D volume.
 
 This structure makes DICOM files both versatile and complex, allowing them to carry detailed metadata along with high-quality medical images.
+
+## DICOM as Python Obj
+
+To represent DICOM files from a single MRI sequence as a Python data structure, you can organize the metadata and pixel data using a list of dictionaries, where each dictionary represents a single DICOM file (or slice) in the MRI sequence. Each dictionary would contain keys for metadata fields (such as patient information, acquisition parameters, and image-specific details) and pixel data stored in a NumPy array (which is often how medical images are processed in Python).
+
+Here is an example of a Python data structure representing multiple DICOM files in a single MRI sequence:
+
+```{python}
+import numpy as np
+
+# Example DICOM sequence with metadata and pixel data for each slice
+mri_sequence = [
+    {
+        'FileName': 'slice_001.dcm',
+        'PatientName': 'John Doe',
+        'PatientID': '123456',
+        'StudyDate': '2023-09-01',
+        'SeriesDescription': 'Brain MRI - T1WI',
+        'SliceLocation': -40.0,
+        'SliceThickness': 5.0,
+        'PixelSpacing': [0.9, 0.9],
+        'ImageOrientationPatient': [1, 0, 0, 0, 1, 0],
+        'Rows': 512,
+        'Columns': 512,
+        'PixelData': np.random.randint(0, 4096, (512, 512), dtype=np.uint16)
+    },
+    {
+        'FileName': 'slice_002.dcm',
+        'PatientName': 'John Doe',
+        'PatientID': '123456',
+        'StudyDate': '2023-09-01',
+        'SeriesDescription': 'Brain MRI - T1WI',
+        'SliceLocation': -35.0,
+        'SliceThickness': 5.0,
+        'PixelSpacing': [0.9, 0.9],
+        'ImageOrientationPatient': [1, 0, 0, 0, 1, 0],
+        'Rows': 512,
+        'Columns': 512,
+        'PixelData': np.random.randint(0, 4096, (512, 512), dtype=np.uint16)
+    },
+    # ... more slices
+]
+
+# Example of accessing data from one DICOM slice
+first_slice = mri_sequence[0]
+print("Patient Name:", first_slice['PatientName'])
+print("Slice Location:", first_slice['SliceLocation'])
+print("Pixel Data Shape:", first_slice['PixelData'].shape)
+```
+
+### Explanation of Data Structure:
+1. **List of Dictionaries**: Each dictionary in the `mri_sequence` list represents a single DICOM file or slice in the MRI sequence.
+2. **Metadata**:
+   - **FileName**: The file name of the DICOM slice.
+   - **PatientName**: The patient's name.
+   - **PatientID**: Unique ID for the patient.
+   - **StudyDate**: Date of the MRI study.
+   - **SeriesDescription**: Description of the MRI series (e.g., "T1WI").
+   - **SliceLocation**: The z-coordinate of the slice relative to some reference point.
+   - **SliceThickness**: The thickness of the slice.
+   - **PixelSpacing**: The distance between adjacent pixels, typically in millimeters.
+   - **ImageOrientationPatient**: Specifies the orientation of the image slice relative to the patient.
+   - **Rows** and **Columns**: The resolution of the image slice.
+3. **PixelData**:
+   - This is a NumPy array that holds the actual pixel intensity values for that slice. Each slice in the MRI sequence has its own pixel data. Here, I’ve used `np.random.randint` to simulate pixel values in the range of 0–4096, which is typical for 12-bit medical images.
+
+### Accessing and Processing:
+You can easily access the pixel data for each slice and perform operations such as:
+- Viewing the shape of the image slice (`first_slice['PixelData'].shape`).
+- Performing image processing using libraries like **NumPy** or **SciPy**.
+- Using visualization tools like **matplotlib** to display the slices.
+
+### Example of Displaying the First Slice:
+```{python}
+import matplotlib.pyplot as plt
+
+# Display the first slice
+plt.imshow(mri_sequence[0]['PixelData'], cmap='gray')
+plt.title(f"Slice Location: {mri_sequence[0]['SliceLocation']}")
+plt.show()
+```
+
+This data structure is a Pythonic way to represent DICOM files in an MRI sequence, making it easy to store both metadata and image data in a structured format. You can then loop through the list to access individual slices, process pixel data, or export them into different formats.

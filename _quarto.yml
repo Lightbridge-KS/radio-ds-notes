@@ -11,7 +11,7 @@ book:
     - index.qmd
     - part: Basic
       chapters: 
-        - "content/radio-data-str.qmd"
+        - "content/dicom.qmd"
     - references.qmd
 
 
