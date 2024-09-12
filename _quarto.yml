@@ -12,6 +12,7 @@ book:
     - part: Basic
       chapters: 
         - "content/dicom.qmd"
+        - "content/pydicom.ipynb"
     - references.qmd
 
 

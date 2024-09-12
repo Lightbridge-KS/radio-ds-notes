@@ -1,6 +1,6 @@
 ---
-title: DICOM
----
+title: DICOM Basic
+--- 
 
 
 ## Overview of DICOM
