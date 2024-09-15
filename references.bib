@@ -1,19 +1,52 @@
-@article{knuth84,
-  author = {Knuth, Donald E.},
-  title = {Literate Programming},
-  year = {1984},
-  issue_date = {May 1984},
-  publisher = {Oxford University Press, Inc.},
-  address = {USA},
-  volume = {27},
-  number = {2},
-  issn = {0010-4620},
-  url = {https://doi.org/10.1093/comjnl/27.2.97},
-  doi = {10.1093/comjnl/27.2.97},
-  journal = {Comput. J.},
-  month = may,
-  pages = {97–111},
-  numpages = {15}
+@article{RadiomicsOnco_Practical,
+  author       = {Shur, Joshua D. and Doran, Simon J. and Kumar, Santosh and Ap Dafydd, Derfel and Downey, Kate and O'Connor, James P. B. and Papanikolaou, Nikolaos and Messiou, Christina and Koh, Dow-Mu and Orton, Matthew R.},
+  title        = {Radiomics in Oncology: A Practical Guide},
+  journal      = {Radiographics: A Review Publication of the Radiological Society of North America, Inc},
+  volume       = {41},
+  number       = {6},
+  pages        = {1717--1732},
+  year         = {2021},
+  month        = {oct},
+  issn         = {1527-1323},
+  doi          = {10.1148/rg.2021210037},
+  abstract     = {Radiomics refers to the extraction of mineable data from medical imaging and has been applied within oncology to improve diagnosis, prognostication, and clinical decision support, with the goal of delivering precision medicine. The authors provide a practical approach for successfully implementing a radiomic workflow from planning and conceptualization through manuscript writing. Applications in oncology typically are either classification tasks that involve computing the probability of a sample belonging to a category, such as benign versus malignant, or prediction of clinical events with a time-to-event analysis, such as overall survival. The radiomic workflow is multidisciplinary, involving radiologists and data and imaging scientists, and follows a stepwise process involving tumor segmentation, image preprocessing, feature extraction, model development, and validation. Images are curated and processed before segmentation, which can be performed on tumors, tumor subregions, or peritumoral zones. Extracted features typically describe the distribution of signal intensities and spatial relationship of pixels within a region of interest. To improve model performance and reduce overfitting, redundant and nonreproducible features are removed. Validation is essential to estimate model performance in new data and can be performed iteratively on samples of the dataset (cross-validation) or on a separate hold-out dataset by using internal or external data. A variety of noncommercial and commercial radiomic software applications can be used. Guidelines and artificial intelligence checklists are useful when planning and writing up radiomic studies. Although interest in the field continues to grow, radiologists should be familiar with potential pitfalls to ensure that meaningful conclusions can be drawn. Online supplemental material is available for this article. Published under a CC BY 4.0 license.},
+  language     = {eng}
 }
 
+@article{sample-size-12-per-gr,
+  author       = {Julious, Steven A.},
+  title        = {Sample size of 12 per group rule of thumb for a pilot study},
+  journal      = {Pharmaceutical Statistics},
+  volume       = {4},
+  number       = {4},
+  pages        = {287--291},
+  year         = {2005},
+  month        = {oct},
+  url          = {https://onlinelibrary.wiley.com/doi/10.1002/pst.185},
+  doi          = {10.1002/pst.185},
+  issn         = {1539-1604, 1539-1612},
+  abstract     = {When designing a clinical trial an appropriate justification for the sample size should be provided in the protocol. However, there are a number of settings when undertaking a pilot trial when there is no prior information to base a sample size on. For such pilot studies the recommendation is a sample size of 12 per group. The justifications for this sample size are based on rationale about feasibility; precision about the mean and variance; and regulatory considerations. The context of the justifications are that future studies will use the information from the pilot in their design. Copyright © 2005 John Wiley \& Sons, Ltd.},
+  language     = {en},
+  rights       = {http://onlinelibrary.wiley.com/termsAndConditions#vor}
+}
 
+@article{Radiomics-Voxel-Size,
+  author       = {Shafiq-Ul-Hassan, Muhammad and Zhang, Geoffrey G. and Latifi, Kujtim and Ullah, Ghanim and Hunt, Dylan C. and Balagurunathan, Yoganand and Abdalah, Mahmoud Abrahem and Schabath, Matthew B. and Goldgof, Dmitry G. and Mackin, Dennis and Court, Laurence Edward and Gillies, Robert James and Moros, Eduardo Gerardo},
+  title        = {Intrinsic dependencies of CT radiomic features on voxel size and number of gray levels},
+  journal      = {Medical Physics},
+  volume       = {44},
+  number       = {3},
+  pages        = {1050--1062},
+  year         = {2017},
+  month        = {mar},
+  issn         = {2473-4209},
+  doi          = {10.1002/mp.12123},
+  abstract     = {PURPOSE: Many radiomics features were originally developed for non-medical imaging applications and therefore original assumptions may need to be reexamined. In this study, we investigated the impact of slice thickness and pixel spacing (or pixel size) on radiomics features extracted from Computed Tomography (CT) phantom images acquired with different scanners as well as different acquisition and reconstruction parameters. The dependence of CT texture features on gray-level discretization was also evaluated.
+  
+  METHODS AND MATERIALS: A texture phantom composed of 10 different cartridges of different materials was scanned on eight different CT scanners from three different manufacturers. The images were reconstructed for various slice thicknesses. For each slice thickness, the reconstruction Field Of View (FOV) was varied to render pixel sizes ranging from 0.39 to 0.98 mm. A fixed spherical region of interest (ROI) was contoured on the images of the shredded rubber cartridge and the 3D printed, 20\% fill, acrylonitrile butadiene styrene plastic cartridge (ABS20) for all phantom imaging sets. Radiomic features were extracted from the ROIs using an in-house program. Features categories were: shape (10), intensity (16), GLCM (24), GLZSM (11), GLRLM (11), and NGTDM (5), fractal dimensions (8) and first-order wavelets (128), for a total of 213 features. Voxel-size resampling was performed to investigate the usefulness of extracting features using a suitably chosen voxel size. Acquired phantom image sets were resampled to a voxel size of 1 × 1 × 2 mm3 using linear interpolation. Image features were therefore extracted from resampled and original datasets and the absolute value of the percent coefficient of variation (\%COV) for each feature was calculated. Based on the \%COV values, features were classified in 3 groups: (1) features with large variations before and after resampling (\%COV >50); (2) features with diminished variation (\%COV <30) after resampling; and (3) features that had originally moderate variation (\%COV <50\%) and were negligibly affected by resampling. Group 2 features were further studied by modifying feature definitions to include voxel size. Original and voxel-size normalized features were used for interscanner comparisons. A subsequent analysis investigated feature dependency on gray-level discretization by extracting 51 texture features from ROIs from each of the 10 different phantom cartridges using 16, 32, 64, 128, and 256 gray levels.
+  
+  RESULTS: Out of the 213 features extracted, 150 were reproducible across voxel sizes, 42 improved significantly (\%COV <30, Group 2) after resampling, and 21 had large variations before and after resampling (Group 1). Ten features improved significantly after definition modification effectively removed their voxel-size dependency. Interscanner comparison indicated that feature variability among scanners nearly vanished for 8 of these 10 features. Furthermore, 17 out of 51 texture features were found to be dependent on the number of gray levels. These features were redefined to include the number of gray levels which greatly reduced this dependency.
+  
+  CONCLUSION: Voxel-size resampling is an appropriate pre-processing step for image datasets acquired with variable voxel sizes to obtain more reproducible CT features. We found that some of the radiomics features were voxel size and gray-level discretization-dependent. The introduction of normalizing factors in their definitions greatly reduced or removed these dependencies.},
+  language     = {eng}
+}

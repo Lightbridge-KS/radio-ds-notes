@@ -13,6 +13,9 @@ book:
       chapters: 
         - "content/dicom.qmd"
         - "content/pydicom.ipynb"
+    - part: Radiomics
+      chapters:
+        - "content/radiomics-wf.qmd"
     - references.qmd
 
 

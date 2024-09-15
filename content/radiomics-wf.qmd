@@ -1,0 +1,129 @@
+---
+title: Radiomics Workflow
+--- 
+
+**References:** [@RadiomicsOnco_Practical]
+
+## Planning
+
+### Sample Size
+
+- **a radiomic signature** (defined as the learned model from a radiomic analysis used to predict a particular clinical outcome)
+
+
+- **For binary classification studies:** `10–15` samples per feature
+  - Apply this rule to the smaller class if class sizes are unequal.
+  
+
+- **Data attrition:** Common due to:
+  - Missing or mislabeled data.
+  - Failure to meet inclusion criteria.
+  - Loss to follow-up.
+  - Poor image quality.
+  
+### Validation
+
+**One-third** of the training sample size (range of 60:40 to 90:10.)
+
+- a trade-off between having enough data in the training set to ensure the model has sufficient predictive power and having a large- enough test dataset to ensure the predicted performance estimate is accurate
+
+**Example:**
+
+A 10-feature model, at least total 133 samples are required
+
+- 100 are used for training
+- 33 for validation. 
+
+If Assuming an attrition rate of 50% would require a total study population of 266. 
+
+### Pilot Samples
+
+- For classification studies, a pilot sample size of **12 per class** has been proposed [@sample-size-12-per-gr], but in practice this is guided by available resources and the study population
+
+
+### Class balanced ?
+
+- **Balanced data:** Each class or outcome contains an approximately equal proportion of data.
+  
+- **Unbalanced data:** Unequal class proportions.
+  - If highly unbalanced, a larger sample size may be required for a generalizable model.
+
+
+### Heterogenitey
+
+**Trade-off in datasets:**
+
+- **Heterogeneous datasets:** Real-world data with potential noise, possibly masking the radiomic signature.
+  - Less rigidly standardized protocols can be used to reflect real-world clinical scenarios.
+
+- **Homogeneous datasets:** Less noisy, but lower generalizability.
+  - Standardized imaging protocols (ie, those that use the same vendor or scanner settings for all samples) can be used to reduce unwarranted confounders and noise 
+
+## Image Acquisition
+
+### Modalitis
+
+Often determined by what is available and used in clinical practice.
+
+- CT and PET data are that signal intensities (SIs) are inherently quantitative.
+
+- MRI SI are arbitrary, and hence **normalization** of SI is recommended.
+  
+- US is more user dependent than other modalities.
+
+- Contrast-enhanced imaging yields information about tumor enhancement, vascularity, and heterogeneity
+
+### Images
+
+- Anonymized to remove patient identifiable metadata.
+  
+- Exported as Digital Imaging and Communication in Medicine (DICOM) files by using a lossless- compressed format
+
+## Image Preprocessing
+
+Raw image data can be enhanced through a variety of preprocessing steps:
+
+![Image Preprocessing [@RadiomicsOnco_Practical]](../img/radiomics-wf_img-preprocess.png){#fig-radiomics-wf_img-preprocess width="100%"}
+
+
+### MRI Preprocessing
+
+- **z-score normalization** is a simple method and is computed by subtracting the mean SI of the region of interest (ROI) from the pixel SI and dividing the result by the standard deviation 
+
+
+- **Bias field correction** should also be applied to correct for the spatial field inhomogeneities encountered with MRI 
+
+### CT Preprocessing
+
+-  **Thresholding on voxel Hounsfield units** can be applied to CT data to exclude voxels that are assumed to contain noninformative tissues. 
+   -  For example, very low values may correspond to air within the lung and high values to bone or calcification.
+  
+### Different Voxel Size
+
+- As some radiomic feature values are dependent on voxel size [@Radiomics-Voxel-Size], images should be resampled to a common spatial resolution for all samples.
+
+- **Linear interpolation** is generally recommended
+
+### Motion correction 
+
+Motion correction can be used to correct for misregistration, blurring, or motion artifacts and has been used in four-dimensional CT of lung tumors
+
+### Image filtration
+
+Image filtration can be used before the extraction of features as a preprocessing step to highlight particular image properties.
+
+- **Nonspatial filters** increase or decrease the sensitivity of the radiomics features to high- or low-intensity values
+  - Examples: taking the *square* or *exponential* of the image intensities
+
+- **Spatial filters** increase or decrease the sensitivity of features to particular spatial properties of the image. Examples:
+  - **Laplacian of Gaussian** (**LoG**) filters: emphasize areas of rapid change (eg, edge detection)
+  - **Wavelet filters:** separate high- and low-spatial-frequency information.
+
+number of radiomics features (and hence datasets) generated with image filtration can become large, so it is typical to try using unfiltered images first.
+
+
+![Image Feature & Filter [@RadiomicsOnco_Practical]](../img/radiomics-wf_feature-filter.png){#fig-radiomics-wf_feature-filter width="100%"}
+
+
+## Segmentation
+
