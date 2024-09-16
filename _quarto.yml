@@ -16,6 +16,9 @@ book:
     - part: Radiomics
       chapters:
         - "content/radiomics-wf.qmd"
+    - part: Pyradiomics
+      chapters: 
+        - "content/pyradiomics/pyradiomics-intro.qmd"
     - references.qmd
 
 

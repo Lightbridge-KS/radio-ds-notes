@@ -1,0 +1,92 @@
+# Pyradiomics Overview
+
+## PKG Structures
+
+### Class Hierarchy of `pyradiomics`
+
+1. **`radiomics.featureextractor.RadiomicsFeatureExtractor`**
+   
+   - **Description:** The central class used for feature extraction. This class handles image loading, pre-processing, feature calculation, and results aggregation.
+   - **Key Methods:**
+     - `execute()`: Extracts features from an image and a mask.
+     - `enableFeatures()`: Enables specific feature classes for extraction.
+     - `disableFeatures()`: Disables feature extraction.
+
+2. **`radiomics.featurebase.RadiomicsFeaturesBase`**
+   
+   - **Description:** The base class for all feature classes in Pyradiomics. All feature classes inherit from this base class.
+   - **Child Classes:**
+     - **`radiomics.firstorder.RadiomicsFirstOrder`**
+       - Extracts first-order statistics such as mean, variance, skewness, etc.
+     - **`radiomics.glcm.RadiomicsGLCM`**
+       - Extracts Gray Level Co-occurrence Matrix (GLCM) features (texture features).
+     - **`radiomics.gldm.RadiomicsGLDM`**
+       - Extracts Gray Level Dependence Matrix (GLDM) features.
+     - **`radiomics.ngtdm.RadiomicsNGTDM`**
+       - Extracts Neighborhood Gray Tone Difference Matrix (NGTDM) features.
+     - **`radiomics.glszm.RadiomicsGLSZM`**
+       - Extracts Gray Level Size Zone Matrix (GLSZM) features.
+     - **`radiomics.glrlm.RadiomicsGLRLM`**
+       - Extracts Gray Level Run Length Matrix (GLRLM) features.
+     - **`radiomics.shape.RadiomicsShape`**
+       - Extracts shape-based features (e.g., volume, surface area, etc.).
+
+3. **`radiomics.imageoperations.ImageOperations`**
+   
+   - **Description:** This class handles image preprocessing operations like resampling, filtering, and normalization.
+   - **Key Methods:**
+     - `resampleImage()`: Resamples the image based on a given spacing.
+     - `applyFilter()`: Applies filters like wavelets or Laplacian of Gaussian (LoG) to the image.
+
+4. **`radiomics.generalinfo.GeneralInfo`**
+   
+   - **Description:** Class responsible for extracting general information about the image (e.g., image dimensions, voxel size, and acquisition details).
+
+5. **`radiomics.logger.RadiomicsLogger`**
+   
+   - **Description:** Handles logging of the pyradiomics execution, including errors and progress reporting.
+   - **Key Methods:**
+     - `setLevel()`: Sets the logging level (e.g., DEBUG, INFO, WARNING).
+     - `addHandler()`: Adds a logging handler to direct logs to a file or console.
+
+6. **`radiomics.calculate.CalcFeatures`**
+   
+   - **Description:** Contains the lower-level logic for calculating features. It includes utility functions to perform calculations within the different feature classes.
+   - **Key Methods:**
+     - `calculateFeatures()`: Central method to perform feature calculation for a given feature class.
+
+
+### High-Level Overview of the Class Structure
+
+```plaintext
+RadiomicsFeatureExtractor
+│
+├── RadiomicsFeaturesBase
+│   ├── RadiomicsFirstOrder
+│   ├── RadiomicsGLCM
+│   ├── RadiomicsGLDM
+│   ├── RadiomicsNGTDM
+│   ├── RadiomicsGLSZM
+│   ├── RadiomicsGLRLM
+│   └── RadiomicsShape
+│
+├── ImageOperations
+│   ├── resampleImage()
+│   └── applyFilter()
+│
+├── GeneralInfo
+│   └── extractGeneralInfo()
+│
+└── RadiomicsLogger
+    ├── setLevel()
+    └── addHandler()
+```
+
+### Summary of Key Classes
+
+- **`RadiomicsFeatureExtractor`:** The main interface for users to extract features.
+- **`RadiomicsFeaturesBase`:** Parent class for all feature extraction classes.
+- **Specific Feature Classes (e.g., GLCM, First Order):** Responsible for extracting different sets of radiomics features.
+- **`ImageOperations`:** Handles image preprocessing steps (e.g., filtering and resampling).
+- **`GeneralInfo`:** Extracts general metadata from the image.
+- **`RadiomicsLogger`:** Manages logging for the package.
