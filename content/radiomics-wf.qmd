@@ -2,7 +2,7 @@
 title: Radiomics Workflow
 --- 
 
-**References:** [@RadiomicsOnco_Practical]
+**References:** [@RadiomicsOnco_Practical], [@Radiomics-HowTo]
 
 ## Planning
 
@@ -85,25 +85,61 @@ Raw image data can be enhanced through a variety of preprocessing steps:
 
 ![Image Preprocessing [@RadiomicsOnco_Practical]](../img/radiomics-wf_img-preprocess.png){#fig-radiomics-wf_img-preprocess width="100%"}
 
-
-### MRI Preprocessing
-
-- **Bias field correction** should also be applied to correct for the spatial field inhomogeneities encountered with MRI
-  - Note: done **before** segmentation
-
-- **Z-score normalization** is a simple method and is computed by subtracting the mean SI of the region of interest (ROI) from the pixel SI and dividing the result by the standard deviation 
-  - Note: done **after** segmentation
-
-### CT Preprocessing
-
--  **Thresholding on voxel Hounsfield units** can be applied to CT data to exclude voxels that are assumed to contain noninformative tissues. 
-   -  For example, very low values may correspond to air within the lung and high values to bone or calcification.
   
-### Different Voxel Size
+### Interpolation to isotropic voxel spacing
 
-- As some radiomic feature values are dependent on voxel size [@Radiomics-Voxel-Size], images should be resampled to a common spatial resolution for all samples.
+As some radiomic feature values are dependent on voxel size [@Radiomics-Voxel-Size], images should be resampled to a common spatial resolution for all samples.
 
 - **Linear interpolation** is generally recommended
+
+For most **texture feature** sets to become rotationally invariant and to increase reproducibility between different datasets [@Radiomics-HowTo].
+
+- **CT:** usually delivers isotropic datasets
+
+- **MRI:** often delivers non-isotropic data with need for different approaches to interpolation
+
+### Range re-segmentation and intensity outlier filtering (normalization)
+
+Performed to remove pixels/voxels from the segmented region that fall outside of a specified range of grey-level [@Radiomics-HowTo].
+
+- **Range re-segmentation:**
+  
+  - Required for **CT** and **PET** data (e.g., for excluding pixels/voxels of air or bone within a tumor ROI/VOI)
+  - Same concept as @sec-ct-preprocessing
+
+- **intensity outlier filtering:**
+  
+  - For **MRI** data
+  - Most commonly used method: to calculate the mean (μ) and standard deviation (σ) of grey-levels within the ROI/VOI and to exclude greylevels outside the range μ ± 3σ
+
+### Discretization
+
+last image processing step is discretization of image intensities inside the ROI/VOI. Discretization consists in grouping the original values according to specific range intervals (bins); the procedure is conceptually equivalent to the creation of a histogram [@Radiomics-HowTo].
+
+**Parameters characterize discretization:**
+
+- **Range** of the discretized quantity = Number of bins x Bin width
+- **Number of bins**
+- **Bin width** (size)
+
+
+Different combinations can lead to different results; the choice of the three parameters is usually influenced by the context:
+
+- The range is usually preserved from the original data, but exceptions are not uncommon, e.g. when the discretized data is to be compared with some reference dataset or when ROIs with much smaller range than the original have to be analyzed. It is worth mentioning that when the range is not preserved and if the number of bins is particularly small, the choice of the range boundaries can have a strong impact on the results
+
+**Fixing the bin number**
+
+- Fixing the bin number (as is the case of discretizing grey-level intensities) normalizes images and is especially beneficial in data with arbitrary intensity units (e.g., **MRI**) and where contrasts are considered important. 
+- The use of a fixed bin number discretization is thought to make radiomic features more reproducible across different samples
+
+(controversies: [Pyradiomics FAQ](https://pyradiomics.readthedocs.io/en/latest/faq.html#radiomics-fixed-%20bin-width))
+
+**Fixing the bin size**
+
+- results in having direct control on the absolute range represented on each bin, therefore allowing the bin sequence to have an immediate relationship with the original intensity scale (such as Hounsfield units or standardized uptake values). 
+- This approach makes it possible to compare discretized data with different ranges, since the bins belonging to the overlapping range will represent the same data interval. 
+- For that reason, previous work recommends the use of a fixed bin size for **PET** images
+- It is recommended to use identical minimum values for all samples, defined by the lower bound of the re-segmentation range
 
 ### Motion correction 
 
@@ -124,6 +160,25 @@ number of radiomics features (and hence datasets) generated with image filtratio
 
 
 ![Image Feature & Filter [@RadiomicsOnco_Practical]](../img/radiomics-wf_feature-filter.png){#fig-radiomics-wf_feature-filter width="100%"}
+
+## Summary by Modalities
+
+### MRI Preprocessing
+
+- **Bias field correction** should also be applied to correct for the spatial field inhomogeneities encountered with MRI
+  - Note: done **before** segmentation
+
+- **Z-score normalization** is a simple method and is computed by subtracting the mean SI of the region of interest (ROI) from the pixel SI and dividing the result by the standard deviation 
+  - Note: done **after** segmentation
+
+- **Fixing the bin number:** normalizes images and is especially beneficial in data with arbitrary intensity units (e.g., **MRI**) and where contrasts are considered important
+
+
+### CT Preprocessing {#sec-ct-preprocessing}
+
+-  **Thresholding on voxel Hounsfield units** can be applied to CT data to exclude voxels that are assumed to contain noninformative tissues. 
+   -  For example, very low values may correspond to air within the lung and high values to bone or calcification.
+
 
 
 ## Segmentation
@@ -168,6 +223,7 @@ Standardization: Image Biomarker Standardization Initiative (IBSI)
 #### First-Order (Intensity-based)
   
 **First-order features:** (Intensity-based) describe properties of the *distribution* of intensities within an ROI, where the spatial location of each voxel is ignored:
+
 - **Location** of the distribution: mean, median, mode, etc
 - **Spread** of the distribution: variance, interquartile range, etc
 - **Shape** of the distribution: skewness, kurtosis, etc (unaffected by image standardization)
@@ -197,3 +253,6 @@ Standardization: Image Biomarker Standardization Initiative (IBSI)
 **Semantic features** such as “spiculated” or “enhancing” can also be used as input features to a radiomics model and will be determined by visual inspection.
 
 These features will typically be categorical (eg, small, large, hy- perenhancing) rather than numerical.
+
+## Feature Stability
+
