@@ -88,10 +88,11 @@ Raw image data can be enhanced through a variety of preprocessing steps:
 
 ### MRI Preprocessing
 
-- **z-score normalization** is a simple method and is computed by subtracting the mean SI of the region of interest (ROI) from the pixel SI and dividing the result by the standard deviation 
+- **Bias field correction** should also be applied to correct for the spatial field inhomogeneities encountered with MRI
+  - Note: done **before** segmentation
 
-
-- **Bias field correction** should also be applied to correct for the spatial field inhomogeneities encountered with MRI 
+- **Z-score normalization** is a simple method and is computed by subtracting the mean SI of the region of interest (ROI) from the pixel SI and dividing the result by the standard deviation 
+  - Note: done **after** segmentation
 
 ### CT Preprocessing
 
@@ -127,3 +128,72 @@ number of radiomics features (and hence datasets) generated with image filtratio
 
 ## Segmentation
 
+### Regions
+
+Segmentation can be performed by drawing ROIs on:
+
+- The tumor
+- Tumor subregions (“habitats”), or 
+- Peritumoral zones
+ 
+The choice guided by the research hypothesis. 
+
+### ROI methods
+
+ROIs can be delineated:
+
+- **Automatically:** 
+  - Potentially faster and more reproducible
+  - may be required for larger dataset
+  - can be compared against those obtained after manual segmentation by using the Dice score.
+
+- **Semiautomatically** 
+
+- **Manually:**
+  - **Feature stability** should be assessed: performing multiple segmentations of the same tumor with either the same or a different reader performing the delineation.
+
+in either two dimensions (2D) (single section) or three dimensions (3D) (multiple sections)
+
+
+## Feature Extraction
+
+Standardization: Image Biomarker Standardization Initiative (IBSI)
+
+### Feature Classes
+
+#### Morphologic
+
+**Morphologic features:** describe geometric properties of the lesion such as volume, diameter, surface area, and elongation
+
+#### First-Order (Intensity-based)
+  
+**First-order features:** (Intensity-based) describe properties of the *distribution* of intensities within an ROI, where the spatial location of each voxel is ignored:
+- **Location** of the distribution: mean, median, mode, etc
+- **Spread** of the distribution: variance, interquartile range, etc
+- **Shape** of the distribution: skewness, kurtosis, etc (unaffected by image standardization)
+-  voxel intensity heterogeneity (entropy, energy, etc)
+
+
+**MRI and US** typically generate images with arbitrary intensity scaling, and if this is not consistent for all subjects it will be necessary to **apply image standardization** before calculating first-order features
+
+#### Second-order (texture)
+
+**Second-order features:** also known as texture features, go beyond first-order features so that the spatial locations as well as the SIs of two or more pixels are used when computing the features.
+
+#### Intensity discretization
+
+**Intensity discretization** involves assigning pixels within a given intensity range to a single value or **“bin”** and is used *before* calculation of secondorder features.
+- **Reducing the number of bins** (or increasing the bin width) will lead to a **loss of image detail** but will remove noise
+- **Increasing the number of bins** (or decreasing the bin width) will retain **more image detail** but will also preserve image noise
+
+
+- When image intensity units are arbitrary (such as with **MRI** data), **fixing** the number of bins (rather than the bin size) is recommended 
+
+
+- Whichever method is used, it should be the same for all patients.
+
+#### Semantic features
+
+**Semantic features** such as “spiculated” or “enhancing” can also be used as input features to a radiomics model and will be determined by visual inspection.
+
+These features will typically be categorical (eg, small, large, hy- perenhancing) rather than numerical.
