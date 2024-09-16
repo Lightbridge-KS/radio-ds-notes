@@ -19,6 +19,7 @@ book:
     - part: Pyradiomics
       chapters: 
         - "content/pyradiomics/pyradiomics-intro.qmd"
+        - "content/pyradiomics/PyRadiomicsExample.ipynb"
     - references.qmd
 
 
