@@ -261,13 +261,14 @@ Standardization: Image Biomarker Standardization Initiative (IBSI)
 #### Intensity discretization
 
 **Intensity discretization** involves assigning pixels within a given intensity range to a single value or **“bin”** and is used *before* calculation of secondorder features.
+
 - **Reducing the number of bins** (or increasing the bin width) will lead to a **loss of image detail** but will remove noise
+
 - **Increasing the number of bins** (or decreasing the bin width) will retain **more image detail** but will also preserve image noise
 
+**Note:**
 
 - When image intensity units are arbitrary (such as with **MRI** data), **fixing** the number of bins (rather than the bin size) is recommended 
-
-
 - Whichever method is used, it should be the same for all patients.
 
 #### Semantic features
