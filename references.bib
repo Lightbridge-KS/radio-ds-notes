@@ -65,3 +65,55 @@
   issn         = {1869-4101},
   abstract     = {Radiomics is a quantitative approach to medical imaging, which aims at enhancing the existing data available to clinicians by means of advanced mathematical analysis. Through mathematical extraction of the spatial distribution of signal intensities and pixel interrelationships, radiomics quantifies textural information by using analysis methods from the field of artificial intelligence. Various studies from different fields in imaging have been published so far, highlighting the potential of radiomics to enhance clinical decision-making. However, the field faces several important challenges, which are mainly caused by the various technical factors influencing the extracted radiomic features.}
 }
+
+@article{Wichtmann2023,
+  author       = {Wichtmann, Barbara D. and Harder, Felix N. and Weiss, Kilian and Schönberg, Stefan O. and Attenberger, Ulrike I. and Alkadhi, Hatem and Pinto Dos Santos, Daniel and Baeßler, Bettina},
+  title        = {Influence of Image Processing on Radiomic Features From Magnetic Resonance Imaging},
+  journal      = {Investigative Radiology},
+  volume       = {58},
+  number       = {3},
+  pages        = {199--208},
+  year         = {2023},
+  month        = {mar},
+  issn         = {1536-0210},
+  doi          = {10.1097/RLI.0000000000000921},
+  abstract     = {OBJECTIVE: Before implementing radiomics in routine clinical practice, comprehensive knowledge about the repeatability and reproducibility of radiomic features is required. The aim of this study was to systematically investigate the influence of image processing parameters on radiomic features from magnetic resonance imaging (MRI) in terms of feature values as well as test-retest repeatability.
+  
+  MATERIALS AND METHODS: Utilizing a phantom consisting of 4 onions, 4 limes, 4 kiwifruits, and 4 apples, we acquired a test-retest dataset featuring 3 of the most commonly used MRI sequences on a 3 T scanner, namely, a T1-weighted, a T2-weighted, and a fluid-attenuated inversion recovery sequence, each at high and low resolution. After semiautomatic image segmentation, image processing with systematic variation of image processing parameters was performed, including spatial resampling, intensity discretization, and intensity rescaling. For each respective image processing setting, a total of 45 radiomic features were extracted, corresponding to the following 7 matrices/feature classes: conventional indices, histogram matrix, shape matrix, gray-level zone length matrix, gray-level run length matrix, neighboring gray-level dependence matrix, and gray-level cooccurrence matrix. Systematic differences of individual features between different resampling steps were assessed using 1-way analysis of variance with Tukey-type post hoc comparisons to adjust for multiple testing. Test-retest repeatability of radiomic features was measured using the concordance correlation coefficient, dynamic range, and intraclass correlation coefficient.
+  
+  RESULTS: Image processing influenced radiological feature values. Regardless of the acquired sequence and feature class, significant differences ( P < 0.05) in feature values were found when the size of the resampled voxels was too large, that is, bigger than 3 mm. Almost all higher-order features depended strongly on intensity discretization. The effects of intensity rescaling were negligible except for some features derived from T1-weighted sequences. For all sequences, the percentage of repeatable features (concordance correlation coefficient and dynamic range ≥ 0.9) varied considerably depending on the image processing settings. The optimal image processing setting to achieve the highest percentage of stable features varied per sequence. Irrespective of image processing, the fluid-attenuated inversion recovery sequence in high-resolution overall yielded the highest number of stable features in comparison with the other sequences (89\% vs 64\%-78\% for the respective optimal image processing settings). Across all sequences, the most repeatable features were generally obtained for a spatial resampling close to the originally acquired voxel size and an intensity discretization to at least 32 bins.
+  
+  CONCLUSION: Variation of image processing parameters has a significant impact on the values of radiomic features as well as their repeatability. Furthermore, the optimal image processing parameters differ for each MRI sequence. Therefore, it is recommended that these processing parameters be determined in corresponding test-retest scans before clinical application. Extensive repeatability, reproducibility, and validation studies as well as standardization are required before quantitative image analysis and radiomics can be reliably translated into routine clinical care.},
+  language     = {eng}
+}
+
+@ARTICLE{Sullivan2015-jz,
+  title     = "Metrology standards for quantitative imaging biomarkers",
+  author    = "Sullivan, Daniel C and Obuchowski, Nancy A and Kessler, Larry G
+               and Raunig, David L and Gatsonis, Constantine and Huang, Erich P
+               and Kondratovich, Marina and McShane, Lisa M and Reeves, Anthony
+               P and Barboriak, Daniel P and Guimaraes, Alexander R and Wahl,
+               Richard L and {RSNA-QIBA Metrology Working Group}",
+  abstract  = "Although investigators in the imaging community have been active
+               in developing and evaluating quantitative imaging biomarkers
+               (QIBs), the development and implementation of QIBs have been
+               hampered by the inconsistent or incorrect use of terminology or
+               methods for technical performance and statistical concepts.
+               Technical performance is an assessment of how a test performs in
+               reference objects or subjects under controlled conditions. In
+               this article, some of the relevant statistical concepts are
+               reviewed, methods that can be used for evaluating and comparing
+               QIBs are described, and some of the technical performance issues
+               related to imaging biomarkers are discussed. More consistent and
+               correct use of terminology and study design principles will
+               improve clinical research, advance regulatory science, and
+               foster better care for patients who undergo imaging studies.",
+  journal   = "Radiology",
+  publisher = "Radiological Society of North America (RSNA)",
+  volume    =  277,
+  number    =  3,
+  pages     = "813--825",
+  month     =  dec,
+  year      =  2015,
+  language  = "en"
+}

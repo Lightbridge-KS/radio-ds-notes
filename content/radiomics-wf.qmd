@@ -79,6 +79,43 @@ Often determined by what is available and used in clinical practice.
   
 - Exported as Digital Imaging and Communication in Medicine (DICOM) files by using a lossless- compressed format
 
+## Segmentation
+
+### Regions
+
+Segmentation can be performed by drawing ROIs on:
+
+- The tumor
+- Tumor subregions (“habitats”) 
+- Peritumoral zones
+ 
+The choice guided by the research hypothesis. 
+
+### ROI methods
+
+ROIs can be delineated:
+
+- **Automatically:** 
+  - Potentially faster and more reproducible
+  - may be required for larger dataset
+  - can be compared against those obtained after manual segmentation by using the Dice score.
+  - Deep learning-based image segmentation
+
+- **Semiautomatically:** 
+  - using standard image segmentation algorithms such as region-growing or thresholding
+
+- **Manually:**
+  - **Feature stability** should be assessed: performing multiple segmentations of the same tumor with either the same or a different reader performing the delineation.
+
+in either two dimensions (2D) (single section) or three dimensions (3D) (multiple sections)
+
+**Drawbacks** of manual and semi-automated image segmentation:
+
+- **Time-consuming:** depending on how many images and datasets have to be segmented.
+- **Observer-bias**
+  - Many radiomic features are not robust against intra- and inter-observer variations concerning ROI/VOI delineation
+  - should perform assessments of intra- and inter-observer reproducibility of the derived radiomic features and exclude non-reproducible features from further analyses.
+
 ## Image Preprocessing
 
 Raw image data can be enhanced through a variety of preprocessing steps:
@@ -116,7 +153,7 @@ Performed to remove pixels/voxels from the segmented region that fall outside of
 
 last image processing step is discretization of image intensities inside the ROI/VOI. Discretization consists in grouping the original values according to specific range intervals (bins); the procedure is conceptually equivalent to the creation of a histogram [@Radiomics-HowTo].
 
-**Parameters characterize discretization:**
+#### **Parameters characterize discretization:**
 
 - **Range** of the discretized quantity = Number of bins x Bin width
 - **Number of bins**
@@ -127,19 +164,33 @@ Different combinations can lead to different results; the choice of the three pa
 
 - The range is usually preserved from the original data, but exceptions are not uncommon, e.g. when the discretized data is to be compared with some reference dataset or when ROIs with much smaller range than the original have to be analyzed. It is worth mentioning that when the range is not preserved and if the number of bins is particularly small, the choice of the range boundaries can have a strong impact on the results
 
-**Fixing the bin number**
+#### **Fixing the bin number**
 
 - Fixing the bin number (as is the case of discretizing grey-level intensities) normalizes images and is especially beneficial in data with arbitrary intensity units (e.g., **MRI**) and where contrasts are considered important. 
 - The use of a fixed bin number discretization is thought to make radiomic features more reproducible across different samples
 
 (controversies: [Pyradiomics FAQ](https://pyradiomics.readthedocs.io/en/latest/faq.html#radiomics-fixed-%20bin-width))
 
-**Fixing the bin size**
+#### **Fixing the bin size**
 
 - results in having direct control on the absolute range represented on each bin, therefore allowing the bin sequence to have an immediate relationship with the original intensity scale (such as Hounsfield units or standardized uptake values). 
 - This approach makes it possible to compare discretized data with different ranges, since the bins belonging to the overlapping range will represent the same data interval. 
 - For that reason, previous work recommends the use of a fixed bin size for **PET** images
 - It is recommended to use identical minimum values for all samples, defined by the lower bound of the re-segmentation range
+
+#### **Open Question: optimal bin number/bin width**
+
+- Bins are too wide (too few): features can be averaged out and lost
+- Bins are too small (too many): features can become indistinguishable from noise
+
+**A balance** is reached when discretization can filter out the noise while preserving the interesting features
+
+small number of bins can generate undesired dependencies on the particular choice of range and bin boundaries, thus undermining the robustness of the analysis.
+
+different MRI sequences might need different bin numbers for obtaining robust and reproducible radiomics features [@Wichtmann2023]
+
+**recommendation** is to always start by inspecting the histogram of the data from which radiomic features are to be extracted and to decide upon a reasonable set of parameters for the discretization step based on the experience.
+
 
 ### Motion correction 
 
@@ -161,9 +212,9 @@ number of radiomics features (and hence datasets) generated with image filtratio
 
 ![Image Feature & Filter [@RadiomicsOnco_Practical]](../img/radiomics-wf_feature-filter.png){#fig-radiomics-wf_feature-filter width="100%"}
 
-## Summary by Modalities
+### Summary by Modalities
 
-### MRI Preprocessing
+#### MRI Preprocessing
 
 - **Bias field correction** should also be applied to correct for the spatial field inhomogeneities encountered with MRI
   - Note: done **before** segmentation
@@ -174,40 +225,11 @@ number of radiomics features (and hence datasets) generated with image filtratio
 - **Fixing the bin number:** normalizes images and is especially beneficial in data with arbitrary intensity units (e.g., **MRI**) and where contrasts are considered important
 
 
-### CT Preprocessing {#sec-ct-preprocessing}
+#### CT Preprocessing {#sec-ct-preprocessing}
 
 -  **Thresholding on voxel Hounsfield units** can be applied to CT data to exclude voxels that are assumed to contain noninformative tissues. 
    -  For example, very low values may correspond to air within the lung and high values to bone or calcification.
 
-
-
-## Segmentation
-
-### Regions
-
-Segmentation can be performed by drawing ROIs on:
-
-- The tumor
-- Tumor subregions (“habitats”), or 
-- Peritumoral zones
- 
-The choice guided by the research hypothesis. 
-
-### ROI methods
-
-ROIs can be delineated:
-
-- **Automatically:** 
-  - Potentially faster and more reproducible
-  - may be required for larger dataset
-  - can be compared against those obtained after manual segmentation by using the Dice score.
-
-- **Semiautomatically** 
-
-- **Manually:**
-  - **Feature stability** should be assessed: performing multiple segmentations of the same tumor with either the same or a different reader performing the delineation.
-
-in either two dimensions (2D) (single section) or three dimensions (3D) (multiple sections)
 
 
 ## Feature Extraction
@@ -227,7 +249,7 @@ Standardization: Image Biomarker Standardization Initiative (IBSI)
 - **Location** of the distribution: mean, median, mode, etc
 - **Spread** of the distribution: variance, interquartile range, etc
 - **Shape** of the distribution: skewness, kurtosis, etc (unaffected by image standardization)
--  voxel intensity heterogeneity (entropy, energy, etc)
+-  Voxel intensity heterogeneity (entropy, energy, etc)
 
 
 **MRI and US** typically generate images with arbitrary intensity scaling, and if this is not consistent for all subjects it will be necessary to **apply image standardization** before calculating first-order features
@@ -254,5 +276,23 @@ Standardization: Image Biomarker Standardization Initiative (IBSI)
 
 These features will typically be categorical (eg, small, large, hy- perenhancing) rather than numerical.
 
-## Feature Stability
+## Feature Selection
+
+The higher the number of features/variables in a model and/or the lower the number of cases in the groups, e.g., for a classification task, the higher the risk of model overfitting. [@Radiomics-HowTo]
+
+**Steps:**
+
+1. **Exclusion of non-reproducible features:**
+   - A feature which suffers from higher intra- or interobserver variability is not likely to be in- formative
+   - Simply assessing reproducibility/robustness by calculation of intra-class- correlation coefficients (ICCs) might not be sufficient since ICCs are known to depend on the natural variance of the underlying data
+   - Recommendations for assessing reproducibility, repeatability, and robustness
+
+2. **Selection of the most relevant variables:**
+   - **ML based:** knock-off filters, recursive feature elimination methods, or random forest algorithms
+   - **Correlation clusters** -> selection of only one representative feature per correlation cluster. 
+     - The variable with the highest biological-clinical variability in the dataset should be selected since it might be most representative of the variations within the specific patient cohort.
+
+3. Leaving -> non-correlated and highly relevant features
+
+
 
