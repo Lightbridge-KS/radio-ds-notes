@@ -4,7 +4,7 @@ project:
 book:
   title: "Radiology DataScience"
   author: "Kittipos Sirivongrungson"
-  date: "9/11/2024"
+  date: today
   repo-url: https://github.com/Lightbridge-KS/radio-ds-notes
   site-url: https://radio-ds-notes-lightbridge.netlify.app
   chapters:
@@ -14,6 +14,7 @@ book:
         - "content/dicom.qmd"
         - "content/pydicom.ipynb"
         - "content/nifti.qmd"
+        - "content/mrml-mrb.qmd"
     - part: Radiomics
       chapters:
         - "content/radiomics-wf.qmd"
@@ -32,6 +33,7 @@ format:
       light: cosmo
       dark: darkly
     toc-depth: 4
+    code-fold: show
 
 execute: 
   freeze: auto
