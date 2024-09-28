@@ -1,0 +1,278 @@
+---
+title: NIfTI Basic
+--- 
+
+::: {.callout-note appearance="simple"}
+**Prompt:** Explain the data structure of NIfTI file.
+:::
+
+## NIfTI Overview
+
+The **NIfTI file format** (Neuroimaging Informatics Technology Initiative) is primarily used for storing brain imaging data, such as MRI and fMRI scans. It is an evolution of the older **Analyze 7.5 format**, and it addresses many of its limitations by adding more flexibility and metadata related to spatial orientation and timing. 
+
+The NIfTI file format can store 3D or 4D volumes, typically representing neuroimaging datasets. It contains both **image data** and **metadata** in a well-defined structure.
+
+
+
+**A NIfTI file** consists of two primary components:
+
+1. **Header**: Contains metadata describing the image (size, orientation, voxel dimensions, etc.).
+2. **Image Data**: The actual voxel intensity values.
+
+### NIfTI File Variants
+
+- **Single File (`.nii`)**: Both the header and image data are stored in a single file.
+- **Two-File Format (`.hdr/.img`)**: The header and image data are stored in separate files (`.hdr` for the header and `.img` for the image data).
+
+---
+
+### NIfTI Header
+
+The NIfTI header is a binary structure containing metadata that describes the dimensions and other properties of the image. It is 348 bytes long in the standard NIfTI format and stores the following key fields:
+
+| **Field**           | **Description**                                                                                                                                   |
+|---------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| **sizeof_hdr**      | The size of the header, typically 348 bytes.                                                                                                      |
+| **datatype**        | Specifies the data type (e.g., unsigned char, 16-bit integer, float). This defines how the voxel data is stored in the image section.             |
+| **dim[]**           | Array specifying the dimensions of the image. `dim[0]` is the number of dimensions (usually 3 or 4 for fMRI). `dim[1]`, `dim[2]`, `dim[3]` represent the size of the image in the x, y, and z directions, respectively. |
+| **pixdim[]**        | Array specifying the pixel size or voxel dimensions in each direction. For example, `pixdim[1]` gives the voxel width in the x direction.          |
+| **vox_offset**      | Offset in bytes from the start of the file to the image data. Usually set to 352 bytes to account for the header length.                           |
+| **scl_slope**       | Scale factor to apply to voxel values (used for scaling image intensity).                                                                         |
+| **scl_inter**       | Intercept to apply after scaling voxel values.                                                                                                    |
+| **qform_code**      | Code specifying whether the orientation information is present and what form it takes (affine transformations).                                   |
+| **qoffset_x, qoffset_y, qoffset_z** | These fields specify the x, y, and z offsets for the spatial location of the image (important for spatial alignment).                   |
+| **sform_code**      | Another code that specifies a different affine transformation if needed (more detailed spatial information).                                      |
+| **srow_x, srow_y, srow_z** | These are 4x4 affine transformation matrix rows that provide detailed orientation and spatial information for the image.                       |
+| **intent_code**     | Code specifying the purpose of the image (e.g., statistical parameter maps, Z-scores, etc.).                                                     |
+| **descrip**         | Free text field describing the image (optional).                                                                                                 |
+
+### Example NIfTI Header Fields:
+
+```plaintext
+sizeof_hdr   : 348
+dim[]        : [4, 64, 64, 30, 150]  # 4D dataset: 64x64x30 voxels, 150 time points
+pixdim[]     : [1, 2.0, 2.0, 3.0, 2.0]  # Voxel sizes in mm (x=2, y=2, z=3) and temporal resolution
+datatype     : 16  # 16 corresponds to float32 data type
+qform_code   : 1  # Quaternion-based rotation
+sform_code   : 1  # Affine transform matrix present
+qoffset_x    : -90.0
+qoffset_y    : -126.0
+qoffset_z    : -72.0
+descrip      : "fMRI scan"
+```
+
+### Image Data
+
+The image data in a NIfTI file immediately follows the header (or resides in a separate `.img` file in the two-file format). It contains the voxel intensity values of the 3D or 4D image. The format and data type of the image data are specified by the `datatype` field in the header.
+
+- **dim[]** array in the header defines the number of dimensions and the size of each dimension
+
+- **datatype** field specifies the type of data stored for each voxel. 
+  - For example, in an MRI scan, each voxel may store a floating-point intensity value or an integer corresponding to the gray level.
+
+- **Voxel Data**: These are the raw intensity values stored in an array. If the image is 3D, this array will be 3-dimensional, and if the image is 4D (like in fMRI, where you have multiple time points), the array will be 4-dimensional.
+
+### Example Voxel Data:
+
+For a 3D MRI scan of dimensions 64x64x30, the image data would contain 64x64x30 voxel intensity values. If the `datatype` is 16 (float32), each voxel would be a 32-bit floating-point number.
+
+In a 4D fMRI dataset with 150 time points, the image data would contain a 64x64x30x150 array of voxel values.
+
+---
+
+### Affine Transformations (Spatial Orientation)
+
+NIfTI uses affine transformation matrices to handle spatial orientation and alignment of images. The header contains two codes (`qform_code` and `sform_code`) that specify the type of transformation used.
+
+- **Q-form**: Represents the rotation and translation of the image in space using a quaternion-based approach.
+- **S-form**: Represents the affine transformation using a 4x4 matrix, which provides more explicit control over scaling, rotation, shearing, and translation.
+
+The affine matrix transforms voxel indices into real-world spatial coordinates (e.g., mm in the scanner space).
+
+### 4x4 Affine Matrix Example:
+
+```
+| srow_x[0] srow_x[1] srow_x[2] qoffset_x |
+| srow_y[0] srow_y[1] srow_y[2] qoffset_y |
+| srow_z[0] srow_z[1] srow_z[2] qoffset_z |
+| 0        0        0        1           |
+```
+
+This matrix describes how voxel indices map to real-world spatial coordinates, which is important for proper alignment and visualization of images.
+
+---
+
+### NIfTI File Example
+
+For a **.nii** file (single-file format), you would have:
+
+1. **Header** (348 bytes or more, depending on metadata size).
+2. **Image Data**: Directly following the header, containing the voxel intensity values.
+
+For a **.hdr/.img** file pair (two-file format):
+
+- **.hdr file**: Contains the header.
+- **.img file**: Contains the image data.
+
+---
+
+### Conclusion
+
+- The **NIfTI header** provides crucial metadata that defines the image’s dimensions, data type, spatial orientation, and voxel sizes.
+- The **image data** is a multidimensional array of voxel intensity values.
+- **Affine transformations** in the header provide spatial alignment information.
+
+## NIfTI Python
+
+::: {.callout-note appearance="simple"}
+**Prompt:** Give example of NIfTI file represented in Python data structure. 
+:::
+
+Here’s an example of how a NIfTI file's structure can be represented in Python using a combination of dictionaries and NumPy arrays. The header information is typically stored as a dictionary-like structure, while the image data is stored as a NumPy array.
+
+First, let’s assume you’ve loaded a NIfTI file using the popular [**Nibabel**](https://nipy.org/nibabel/) library, which is commonly used in Python for working with NIfTI files.
+
+### Python Code to Load a NIfTI File
+
+```{python}
+from pyhere import here
+import nibabel as nib
+import numpy as np
+```
+
+```{python}
+# Load the NIfTI file
+nifti_image = nib.load(here("data/nifti/avg152T1_LR_nifti.nii"))
+print(nifti_image.shape)
+```
+
+```{python}
+# Extract header and image data
+header = nifti_image.header
+
+# This returns the image data as a NumPy array
+image_data = nifti_image.get_fdata()  
+```
+
+
+
+### NIfTI File Header in Python
+
+The header can be thought of as a dictionary-like object with key-value pairs that describe the image’s metadata:
+
+```{python}
+# Example of NIfTI header represented as a dictionary-like object in Python
+nifti_header = {
+    'sizeof_hdr': header['sizeof_hdr'],  # Size of the header
+    'datatype': header['datatype'],  # Data type of the voxel values
+    'dim': header['dim'],  # Dimensions of the image
+    'pixdim': header['pixdim'],  # Voxel dimensions
+    'qform_code': header['qform_code'],  # Code describing the q-form transformation
+    'sform_code': header['sform_code'],  # Code describing the s-form transformation
+    'srow_x': header['srow_x'],  # Row for the x affine transformation
+    'srow_y': header['srow_y'],  # Row for the y affine transformation
+    'srow_z': header['srow_z'],  # Row for the z affine transformation
+    'vox_offset': header['vox_offset'],  # Offset where the voxel data starts
+    'scl_slope': header['scl_slope'],  # Slope to scale the voxel values
+    'scl_inter': header['scl_inter'],  # Intercept to scale the voxel values
+    'descrip': header['descrip'],  # Description of the image
+    'xyzt_units': header['xyzt_units'],  # Units of measurement for space and time
+}
+```
+
+### Example of the Header Structure:
+
+```{python}
+nifti_header = {
+    'sizeof_hdr': 348,
+    'datatype': 16,  # float32 data type
+    'dim': [3, 64, 64, 30, 1],  # 3D image: 64x64x30 voxels
+    'pixdim': [1.0, 2.0, 2.0, 3.0, 1.0],  # Voxel dimensions (x=2mm, y=2mm, z=3mm)
+    'qform_code': 1,  # Quaternion-based transformation
+    'sform_code': 1,  # Affine transformation matrix present
+    'srow_x': [-2.0, 0.0, 0.0, 90.0],  # Affine matrix first row
+    'srow_y': [0.0, 2.0, 0.0, -126.0],  # Affine matrix second row
+    'srow_z': [0.0, 0.0, 3.0, -72.0],  # Affine matrix third row
+    'vox_offset': 352,  # Offset where voxel data starts
+    'scl_slope': 1.0,  # Scaling slope for voxel values
+    'scl_inter': 0.0,  # Scaling intercept for voxel values
+    'descrip': "Sample MRI scan",  # Descriptive text
+    'xyzt_units': 10  # Millimeters for spatial units
+}
+```
+
+### NIfTI Image Data Representation
+
+The image data is typically a multidimensional NumPy array that contains the voxel intensity values. In a 3D MRI scan, for example, this could be a 3D array where each element represents the intensity of a voxel.
+
+
+```{python}
+# Example: 64x64x30 3D image data
+image_data = np.random.rand(64, 64, 30)  # Random data to represent voxel intensities
+
+# Alternatively, you can extract the actual data from the NIfTI object
+image_data = nifti_image.get_fdata()
+```
+
+### Affine Transformation Matrix
+
+The affine matrix is a 4x4 transformation matrix stored in the header. This matrix helps map voxel indices to real-world coordinates (such as millimeters in the scanner space).
+
+```{python}
+# Extract the affine transformation matrix
+affine_matrix = nifti_image.affine
+```
+
+### Example of the Affine Matrix:
+
+```{python}
+affine_matrix = np.array([
+    [-2.0,  0.0,  0.0,  90.0],
+    [ 0.0,  2.0,  0.0, -126.0],
+    [ 0.0,  0.0,  3.0,  -72.0],
+    [ 0.0,  0.0,  0.0,   1.0]
+])
+```
+
+This matrix helps map the voxel coordinates in the NIfTI image to real-world coordinates in the scanner’s space.
+
+### Complete Python Representation of a NIfTI File
+
+```python
+# Header as a Python dictionary
+nifti_header = {
+    'sizeof_hdr': 348,
+    'datatype': 16,
+    'dim': [3, 64, 64, 30, 1],
+    'pixdim': [1.0, 2.0, 2.0, 3.0, 1.0],
+    'qform_code': 1,
+    'sform_code': 1,
+    'srow_x': [-2.0, 0.0, 0.0, 90.0],
+    'srow_y': [0.0, 2.0, 0.0, -126.0],
+    'srow_z': [0.0, 0.0, 3.0, -72.0],
+    'vox_offset': 352,
+    'scl_slope': 1.0,
+    'scl_inter': 0.0,
+    'descrip': "Sample MRI scan",
+    'xyzt_units': 10
+}
+
+# Image data as a NumPy array (64x64x30)
+image_data = np.random.rand(64, 64, 30)
+
+# Affine transformation matrix (4x4)
+affine_matrix = np.array([
+    [-2.0,  0.0,  0.0,  90.0],
+    [ 0.0,  2.0,  0.0, -126.0],
+    [ 0.0,  0.0,  3.0,  -72.0],
+    [ 0.0,  0.0,  0.0,   1.0]
+])
+```
+
+### Explanation:
+
+1. **Header**: Contains metadata about the image such as dimensions, data type, voxel sizes, and spatial transformation.
+2. **Image Data**: A 3D array of voxel intensity values, where each value corresponds to a voxel in the brain scan.
+3. **Affine Matrix**: Describes how to map voxel indices to real-world spatial coordinates.
+
+This structure provides a clear separation of metadata and actual image data, making it easier to handle in research and clinical settings.
