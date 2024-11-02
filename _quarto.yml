@@ -24,6 +24,7 @@ book:
         - "content/pyradiomics/PyRadiomicsExample.ipynb"
     - part: "3D Slicer"
       chapters:
+        - "content/slicer-intro.qmd"
         - "content/slicer-segment.qmd"
     - references.qmd
 

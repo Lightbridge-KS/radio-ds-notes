@@ -1,0 +1,110 @@
+---
+title: "Slicer - Intro"
+author: "Kittipos Sirivongrungson"
+date: 2024/11/02
+---
+
+## Backend
+
+The **Python backend module** in 3D Slicer is central to its extensibility and customization, allowing users to add new functionality, automate processes, and interact directly with the application. Here’s an overview of its structure and key components:
+
+### 1. Modules
+
+- **Modules in 3D Slicer** are the primary way of adding functionality and are often written in Python. They can be thought of as plugins, covering various tasks like segmentation, visualization, registration, and more.
+- The **Python backend** supports both **CLI modules** (usually for running specific command-line tools) and **scripted modules** (Python-based) that integrate deeply into the Slicer interface.
+- **Scripted Modules** are typically structured with a user interface in the foreground and backend Python code handling data processing and interaction with other modules.
+
+### Python Interactor
+
+- Slicer includes a **Python interactor** (console) where users can directly enter Python commands to control the application, interact with the data, run scripts, or test module functionality.
+- This interactor gives direct access to the **MRML (Medical Reality Modeling Language) scene**, which manages all data nodes like images, segmentations, and transforms.
+
+### MRML Scene
+
+- **MRML (Medical Reality Modeling Language)** is the core data management framework within 3D Slicer. Python backend modules interact with the MRML scene to manipulate and process data objects.
+- All data (images, models, segmentations) are stored as **MRML nodes**, and the Python backend can add, modify, and delete these nodes, making it possible to automate complex workflows.
+
+### Slicer API
+
+- The **Slicer API** provides Python commands and functions to interact with 3D Slicer's MRML scene and application logic. This API allows modules to:
+  - Access, create, or modify data (e.g., loading DICOM files, creating segmentation nodes).
+  - Control the interface (e.g., changing views, applying color maps).
+  - Automate tasks (e.g., batch processing multiple images).
+- The Slicer API also includes a number of **helper functions** and classes for working with images, segmentations, and transformations.
+
+### Python Packages Integration
+
+- 3D Slicer’s Python environment supports additional packages, enabling the integration of packages like **NumPy**, **SciPy**, **SimpleITK**, and **VTK**.
+- This allows the backend to perform sophisticated processing tasks within the module, such as statistical analysis, image processing, or machine learning model integration.
+
+### Extensions and Custom Modules
+
+- Users can create custom modules in Python, which can be distributed as **extensions**. This makes it easy to share new functionality with other users.
+- The **Extensions Manager** allows users to install new Python modules without modifying the base application, making it flexible to tailor Slicer to specific research needs.
+
+### Summary Table
+
+| Component           | Description                                                                 |
+|---------------------|-----------------------------------------------------------------------------|
+| Modules             | Main plugin structure; includes CLI and Python-scripted modules             |
+| Python Interactor   | Console for direct Python command entry                                     |
+| MRML Scene          | Core data management framework; organizes data as nodes                    |
+| Slicer API          | Provides functions to control Slicer, manage MRML nodes, and automate tasks|
+| Python Packages     | Integrates libraries like NumPy, SciPy, SimpleITK, and VTK for added power  |
+| Extensions          | Custom Python modules can be added as extensions for sharing and reuse      |
+
+This structure lets 3D Slicer’s Python backend serve as a flexible tool for customization, automation, and advanced data processing.
+
+## UI Frontend
+
+The **UI frontend** of 3D Slicer is designed to be intuitive and customizable, enabling users to perform complex tasks like segmentation, visualization, and registration of medical images. Here’s an overview of its structure and key components:
+
+### Main Window Layout
+
+- **Main Toolbar**: Contains basic actions like loading data, saving, viewing extensions, and switching views. It’s a quick access point for primary actions.
+- **Module Panel**: The left side of the screen includes a dropdown to select modules, with the chosen module’s specific interface appearing below it. Each module (e.g., “Segment Editor,” “Data,” “Volumes”) has its own tailored UI controls for its functionality.
+- **Data Panel**: Located to the right, it lists all the data loaded in the scene, such as volumes, models, segmentations, and other data nodes.
+- **Display Area**: The central portion of the UI where medical images and 3D renderings are visualized. It’s the most interactive part of the interface and can be configured for different views, such as 2D slice views and 3D volume rendering.
+
+### Slice Views (2D Display)
+
+- **Slice Views**: These provide 2D orthogonal views of the medical images (axial, sagittal, coronal). Users can scroll through slices, zoom, adjust window/level, and add overlays.
+- **Customizable View Layouts**: 3D Slicer allows users to select from predefined layouts (e.g., 1x1, 2x2, 3x3 grids) to organize the 2D and 3D views based on the needs of the task.
+
+### 3D View (3D Display)
+
+- The **3D View** window enables volumetric visualization of structures within the medical image. Users can visualize models, segmentations, and volume renderings, which is especially useful for tumor visualization and planning.
+- The 3D view supports **interactive manipulation** (rotate, zoom, pan), as well as lighting and opacity adjustments to optimize visibility.
+
+### Module-Specific Panels
+
+- Each **module** (e.g., Segment Editor, Volume Rendering, Transforms) has a unique set of tools and controls that appear in the **Module Panel** on the left side. This allows users to perform module-specific tasks:
+  - **Segment Editor**: Tools for creating and refining segmentations, including options for thresholding, painting, and 3D editing.
+  - **Volume Rendering**: Settings for rendering CT or MRI volumes in 3D with adjustable opacity, shading, and color mapping.
+  - **Transforms**: Tools for applying spatial transformations to images and models.
+
+### Data Management and Interaction
+
+- The **Data Panel** (or **Subject Hierarchy Panel**) provides an organized view of all data in the scene. Users can organize data hierarchically, making it easier to manage complex datasets.
+- The panel allows actions like hiding, showing, renaming, and reordering objects, as well as applying color maps or transferring objects to different modules.
+
+### Settings and Customization
+
+- **Application Settings**: The **Settings** menu offers options to customize the interface, such as adjusting the color theme, setting default directories, and changing behavior for loading and saving data.
+- **Custom Layouts**: Users can create and save custom UI layouts to optimize workflows. Layouts can be tailored to the user’s preferences and task-specific needs.
+- **Python Console**: Embedded in the UI, the **Python Console** allows for scripting and automation within the application, making it easy to execute Python commands directly for advanced control.
+
+### Summary Table
+
+| Component               | Description                                                                                       |
+|-------------------------|---------------------------------------------------------------------------------------------------|
+| Main Toolbar            | Provides access to core actions like data loading, saving, and view switching                     |
+| Module Panel            | Displays tools and options for the selected module, enabling task-specific controls               |
+| Data Panel              | Shows all loaded data objects; allows management and organization of the scene                    |
+| Slice Views (2D)        | 2D views for axial, sagittal, and coronal planes; customizable layout options                     |
+| 3D View                 | Volumetric visualization for 3D rendering and interaction with structures                         |
+| Module-Specific Panels  | Unique UI for each module (e.g., Segment Editor, Volume Rendering) with specialized tools         |
+| Application Settings    | Customizable settings for color themes, directory paths, and other interface preferences          |
+| Python Console          | Allows scripting and automation directly within the UI for advanced functionality and customization|
+
+The UI frontend of 3D Slicer is designed to provide a seamless, modular experience, allowing users to easily manage data, interact with images and segmentations, and perform highly specialized tasks within a single, cohesive environment.
