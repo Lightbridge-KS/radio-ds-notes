@@ -24,6 +24,7 @@ book:
       chapters: 
         - "content/pyradiomics/pyradiomics-intro.qmd"
         - "content/pyradiomics/PyRadiomicsExample.ipynb"
+        - "content/pyradiomics/pyradiomics-extract-df.ipynb"
     - part: "3D Slicer"
       chapters:
         - "content/slicer-intro.qmd"
