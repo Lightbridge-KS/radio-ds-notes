@@ -1,0 +1,106 @@
+---
+title: "NRRD - Intro"
+---
+
+
+The **NRRD (Nearly Raw Raster Data)** file format is used to store and organize scientific and medical imaging data, commonly for 3D and 4D datasets. NRRD files are often used in applications like 3D Slicer for handling multi-dimensional imaging data. The format is flexible, supporting various data types, dimensions, and metadata.
+
+## Overview 
+
+### Structure of NRRD File
+
+1. **Header**: Contains metadata about the image, specifying dimensions, data type, spacing, orientation, and other descriptive information. The header is usually in plain text, making it easy to read and edit.
+2. **Data**: Contains the raw imaging data (voxel values). The data can be embedded directly in the `.nrrd` file or stored in a separate file, referred to by the header.
+
+### Basic Structure of an NRRD Header
+
+An NRRD header typically looks like this:
+
+```plaintext
+NRRD0004
+type: float
+dimension: 3
+sizes: 256 256 128
+encoding: gzip
+spacings: 1.0 1.0 1.5
+axis-mappings: 0 1 2
+kinds: space space space
+space origin: (0,0,0)
+```
+
+- **NRRD0004**: Magic number indicating the NRRD format version.
+- **type**: Data type of the voxel values (e.g., `float`, `short`, `int`).
+- **dimension**: Number of dimensions (e.g., 2 for 2D, 3 for 3D).
+- **sizes**: Number of voxels along each dimension.
+- **encoding**: Specifies how the data is stored (e.g., `raw`, `gzip` for compression).
+- **spacings**: Physical spacing between voxels along each axis.
+- **axis-mappings**: Maps data dimensions to spatial dimensions.
+- **kinds**: Specifies the type of each axis (e.g., `space` for spatial dimensions).
+- **space origin**: Coordinates of the origin in physical space.
+
+## `pynrrd`
+
+```{python}
+from pyhere import here
+import nrrd
+```
+
+The `pynrrd` Python library is a popular tool for reading, writing, and manipulating NRRD files. Below are the steps to install `pynrrd` and use it to read NRRD files.
+
+
+### Reading an NRRD File
+
+To read an NRRD file, use the `nrrd.read()` function, which returns two items:
+
+- **data**: A NumPy array containing the image data.
+- **header**: A dictionary containing the metadata from the NRRD header.
+
+Here’s a basic example:
+
+```{python}
+# Read the NRRD file
+data, header = nrrd.read(here("data/MRI-Brain-Eye/Case1/3 t1 axial Processed_CaPTk.nrrd"))
+
+# Display the shape of the data
+print("Data shape:", data.shape)
+
+# Display the header information
+print("Header metadata:", header)
+```
+
+
+- **data**: This will be a multi-dimensional NumPy array, with dimensions specified by `header['sizes']`. You can directly manipulate this array or use it for visualization.
+  
+- **header**: A dictionary containing the metadata extracted from the NRRD header, including keys like `type`, `dimension`, `spacings`, and `space origin`.
+
+### Accessing Specific Metadata
+
+You can access specific metadata fields from the header dictionary:
+
+```{python}
+# Access voxel spacing
+spacing = header.get('spacings', None)
+print("Voxel Spacing:", spacing)
+
+# Access data type
+data_type = header.get('type', None)
+print("Data Type:", data_type)
+```
+
+
+### Visualizing a Slice of the NRRD Data
+
+To visualize a slice of the 3D NRRD data (for example, slice 64 along the z-axis), you can use `matplotlib`:
+
+```{python}
+import matplotlib.pyplot as plt
+
+# Select a slice from the 3D data
+slice_data = data[:, :, 64]
+
+# Display the slice
+plt.imshow(slice_data, cmap='gray')
+plt.title("Slice 64 of the NRRD data")
+plt.axis('off')
+plt.show()
+```
