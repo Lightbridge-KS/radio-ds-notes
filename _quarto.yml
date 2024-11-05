@@ -27,8 +27,9 @@ book:
         - "content/pyradiomics/pyradiomics-extract-df.ipynb"
     - part: "3D Slicer"
       chapters:
-        - "content/slicer-intro.qmd"
-        - "content/slicer-segment.qmd"
+        - "content/slicer/slicer-intro.qmd"
+        - "content/slicer/slicer-MR-field-correct.qmd"
+        - "content/slicer/slicer-segment.qmd"
     - references.qmd
 
 
