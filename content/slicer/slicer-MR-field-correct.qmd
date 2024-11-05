@@ -7,7 +7,7 @@ title: "MRI field correction"
 
 ![N4ITK MRI Bias Correction Module](./img/3dslicer_N4ITK.png){#fig-slicer-n4itk width="80%"}
 
-
+**Reference:** <https://doi.org/10.54294/jculxw>
 
 The **N4ITK MRI Bias Correction** module in 3D Slicer is used to correct for **intensity non-uniformities** (also known as bias field or inhomogeneity) in MRI images. This correction is essential for preprocessing in radiomics studies, as it standardizes the image intensities across the scan, making radiomic features more consistent.
 
