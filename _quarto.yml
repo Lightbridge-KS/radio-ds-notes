@@ -12,6 +12,7 @@ book:
     - part: Basic
       chapters: 
         - "content/dicom.qmd"
+        - "content/dicom-tags.qmd"
         - "content/pydicom.ipynb"
         - "content/nifti.qmd"
         - "content/mrml-mrb.qmd"

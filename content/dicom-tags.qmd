@@ -1,0 +1,134 @@
+---
+title: DICOM Tags
+---
+
+
+## General Tags
+
+### Station Name (CT/MR Name)
+
+`00081010` (0008,1010): **Station Name**
+
+Example:
+
+```js
+"00081010": {
+    "vr": "SH",
+    "Value": [
+        "AWP152068"
+    ]
+}
+```
+
+### Study Type
+
+`00321060` (0032,1060): **Requested Procedure Description**
+
+Example: 
+
+```js
+"00321060": {
+    "vr": "LO",
+    "Value": [
+        "MRI Brain"
+    ]
+}
+```
+
+`00080104` (0008,0104): **Code Meaning**
+
+Example: 
+
+```js
+"00080104": {
+    "vr": "LO",
+    "Value": [
+        "MRI Brain"
+    ]
+},
+```
+
+### Series
+
+`0008103E` (0008,103E): **Series Description**
+
+Example: 
+
+```js
+"0008103E": {
+    "vr": "LO",
+    "Value": [
+        "AX_T2FS_MV_XD"
+    ]
+}
+```
+
+### Protocol Name
+
+
+`00181030` (0018,1030): **Protocol Name**
+
+Example: 
+
+```js
+"00181030": {
+    "vr": "LO",
+    "Value": [
+        "AX_T2FS_MV_XD"
+    ]
+}
+```
+
+
+
+## MRI Params
+
+
+### Phase
+
+`00089209` (0008,9209): **Acquisition Contrast**
+
+Example: 
+
+```js
+"00089209": {
+    "vr": "CS",
+    "Value": [
+        "T2"
+    ]
+},
+```
+
+### TR
+
+`00180080` (0018, 0080): **Repetition Time**
+
+Example: 
+
+```js
+"00180080": {
+    "vr": "DS",
+    "Value": [
+        480
+    ]
+}
+```
+
+### TE
+
+"00180081": {
+    "vr": "DS",
+    "Value": [
+        8.9
+    ]
+},
+
+
+### FA
+
+"00181314": {
+    "vr": "DS",
+    "Value": [
+        90
+    ]
+},
