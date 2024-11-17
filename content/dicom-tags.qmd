@@ -5,6 +5,28 @@ title: DICOM Tags
 
 ## General Tags
 
+### Manufacturer
+
+(0008,0070): **Manufacturer**
+
+(0008,1090): **Manufacturer's Model Name**
+
+### Institution Name
+
+`00080080` (0008,0080): **Institution Name**
+
+Example:
+
+```js
+"00080080": {
+    "vr": "LO",
+    "Value": [
+        "MR RT Ramathibodi  Hospital"
+    ]
+},
+```
+
+
 ### Station Name (CT/MR Name)
 
 `00081010` (0008,1010): **Station Name**
@@ -44,6 +66,21 @@ Example:
     "vr": "LO",
     "Value": [
         "MRI Brain"
+    ]
+},
+```
+
+### Source Application
+
+`00020016` (0002,0016): **Source Application Entity Title**
+
+Example:
+
+```js
+"00020016": {
+    "vr": "AE",
+    "Value": [
+        "MRI_RT_F1_01"
     ]
 },
 ```
@@ -99,6 +136,39 @@ Example:
 },
 ```
 
+### Slice Thickness & Gap
+
+$$
+\text{Slice Gap}  = (\text{Spacing Between Slices}) − (\text{Slice Thickness})
+$$
+
+(0018,0050): **Slice Thickness**
+
+(0018,0088): **Spacing Between Slices**
+
+#### Alternative
+
+If Spacing Between Slices is missing, slice positions from the:
+
+(0020,0032): **Image Position (Patient)**
+
+Can be used to derive the slice gap indirectly by comparing the Z-coordinates of consecutive slices.
+
+### Magnetic Field Strength
+
+`00180087` (0018,0087): **Magnetic Field Strength**
+
+Example:
+
+```js
+"00180087": {
+    "vr": "DS",
+    "Value": [
+        1.5
+    ]
+},
+```
+
 ### TR
 
 `00180080` (0018, 0080): **Repetition Time**
@@ -116,19 +186,28 @@ Example:
 
 ### TE
 
+`00180081` (0018,0081): **Echo Time**
+
+Example: 
+
+```js
 "00180081": {
     "vr": "DS",
     "Value": [
         8.9
     ]
 },
-
+```
 
 ### FA
 
+`00181314` (0018,1314): **Flip Angle**
+
+```js
 "00181314": {
     "vr": "DS",
     "Value": [
         90
     ]
 },
+```
