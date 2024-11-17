@@ -14,6 +14,7 @@ book:
         - "content/dicom.qmd"
         - "content/dicom-tags.qmd"
         - "content/pydicom.ipynb"
+        - "content/pydicom-tags.ipynb"
         - "content/nifti.qmd"
         - "content/mrml-mrb.qmd"
         - "content/nrrd-intro.qmd"
