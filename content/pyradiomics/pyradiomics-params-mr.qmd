@@ -3,6 +3,109 @@ title: MRI Parameters
 code-fold: true
 ---
 
+## **Image Filter**
+
+In **PyRadiomics**, the specified `imageType` filters (`Original`, `LoG`, and `Wavelet`) are applied **before** the extraction of features from each `featureClass`. Here's how it works:
+
+
+### How `imageType` Works
+
+- **Definition**: Each `imageType` specifies a pre-processing step (e.g., no filtering for `Original`, edge enhancement for `LoG`, or multi-frequency decomposition for `Wavelet`) applied to the input image before feature extraction.
+- **Behavior**: For each enabled `imageType`, PyRadiomics generates a new version of the image and applies all specified `featureClass` extractions to that version of the image.
+
+
+### Filter-Specific Behavior
+
+1. **`Original`**
+   - **Description**: Uses the unprocessed input image directly for feature extraction.
+   - **Workflow**:
+     1. No filtering is applied.
+     2. All enabled `featureClass` (e.g., `firstorder`, `shape`, `glcm`, etc.) are computed on the original image.
+   - **Usage**: Baseline features to capture raw intensity and shape information.
+
+2. **`LoG` (Laplacian of Gaussian)**
+   - **Description**: Enhances edges and fine details in the image. The filter is applied at different scales specified by `sigma` values.
+   - **Workflow**:
+     1. The LoG filter is applied to the input image for each `sigma` value (e.g., `[2.0, 3.0, 4.0]`).
+     2. Each filtered image is treated as a separate version of the input image.
+     3. All enabled `featureClass` are computed for **each `LoG`-filtered image**.
+   - **Usage**: Extracts texture features sensitive to specific spatial scales.
+
+3. **`Wavelet`**
+   - **Description**: Applies a wavelet transformation to decompose the image into multiple frequency components. For each wavelet decomposition, eight sub-bands (LL, LH, HL, HH, etc.) are generated.
+   - **Workflow**:
+     1. The wavelet filter decomposes the input image into sub-bands.
+     2. Each sub-band is treated as a separate version of the input image.
+     3. All enabled `featureClass` are computed for **each wavelet sub-band**.
+   - **Usage**: Captures multi-scale texture and frequency patterns.
+
+---
+
+#### Relationship Between `imageType` and `featureClass`
+
+- For each enabled `imageType`, all specified `featureClass` (e.g., `firstorder`, `glcm`, `glrlm`, etc.) are applied.
+- This means PyRadiomics performs the following:
+  - Extract features from the **original image** for all enabled `featureClass`.
+  - Apply the **LoG filter** for each `sigma` value and extract features for all enabled `featureClass` for each filtered image.
+  - Apply the **wavelet transformation**, and extract features for all enabled `featureClass` for each sub-band.
+
+### Practical Example
+
+**Configuration**
+
+```yaml
+imageType:
+  Original: {}
+  LoG:
+    sigma: [2.0, 3.0]
+  Wavelet: {}
+
+featureClass:
+  firstorder: true
+  glcm: true
+  shape: true
+```
+
+**Execution Workflow**
+
+1. **Original Image**:
+   - Extract `firstorder`, `glcm`, and `shape` features.
+2. **LoG Filter (σ = 2.0)**:
+   - Apply the LoG filter with `sigma = 2.0`.
+   - Extract `firstorder`, `glcm`, and `shape` features from this filtered image.
+3. **LoG Filter (σ = 3.0)**:
+   - Apply the LoG filter with `sigma = 3.0`.
+   - Extract `firstorder`, `glcm`, and `shape` features from this filtered image.
+4. **Wavelet**:
+   - Decompose the image into 8 sub-bands (LL, LH, HL, HH, etc.).
+   - Extract `firstorder`, `glcm`, and `shape` features from each sub-band.
+
+**Result**:
+
+- Features are computed multiple times: once for each image type and filter configuration.
+- The resulting feature set will include:
+  - Features from the **original image**.
+  - Features for each **LoG σ value**.
+  - Features for each **wavelet sub-band**.
+
+---
+
+### Why Does PyRadiomics Do This?
+
+1. **Enhanced Feature Representation**:
+   - Different filters (e.g., LoG, wavelet) capture specific spatial or frequency-based patterns that the original image may not reveal.
+2. **Multi-Scale Analysis**:
+   - LoG captures patterns at specific spatial scales, while wavelets decompose the image into low- and high-frequency components.
+3. **Comprehensive Texture Analysis**:
+   - Computing features on multiple filtered images enriches the feature set, potentially improving model performance in downstream tasks.
+
+
+### Summary
+
+- PyRadiomics applies all `imageType` filters before extracting the specified features for each `featureClass`.
+- **For each `imageType`:** PyRadiomics processes the filtered image and computes all enabled features, leading to a comprehensive feature set.
+- **Implication**: The feature set size increases significantly with each additional `imageType` and filter parameter (e.g., `sigma` values for LoG, sub-bands for wavelets).
+
 
 
 ## **Thin-slice MRI Radiomics (3 mm)**
