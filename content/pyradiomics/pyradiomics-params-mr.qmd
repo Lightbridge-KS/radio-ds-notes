@@ -5,7 +5,7 @@ code-fold: true
 
 
 
-## Thin-slice MRI Radiomics (3 mm)
+## **Thin-slice MRI Radiomics (3 mm)**
 
 - [exampleMR_3mm.yaml](https://github.com/AIM-Harvard/pyradiomics/blob/master/examples/exampleSettings/exampleMR_3mm.yaml)
 
@@ -142,7 +142,7 @@ featureClass:
 4. **Bin Width and Shift**: Optimized for MRI intensity ranges and ensures numerical stability.
 5. **LoG Filtering**: Emphasizes spatial details at multiple scales, appropriate for high-resolution data.
 
-## Thick-slice MRI Radiomics (5 mm)
+## **Thick-slice MRI Radiomics (5 mm)**
 
 - [exampleMR_5mm.yaml](https://github.com/AIM-Harvard/pyradiomics/blob/master/examples/exampleSettings/exampleMR_5mm.yaml)
 
@@ -308,3 +308,94 @@ The key differences in **`exampleMR_3mm.yaml`** (thin slice) vs. **`exampleMR_5m
 - **Thick Slice Setting (5 mm):** Adjusted for coarser spatial features, reducing sensitivity to interpolation artifacts.
 
 Would you like further assistance tailoring these configurations to your specific dataset or workflow?
+
+## **2D vs 3D Feature Extraction**
+
+
+### 3D Feature Extraction
+
+- **Definition**: Involves analyzing a **3D volume** of the Region of Interest (ROI) defined by the segmentation mask.
+- **How it works**: The entire ROI is treated as a single volumetric entity, and radiomics features are extracted based on the spatial relationships across all three dimensions (X, Y, Z).
+- **Example**: Texture features (e.g., GLCM, GLRLM) are calculated using voxel neighbors in all directions (26-neighborhood connectivity for 3D).
+- **Advantages**:
+  - Captures volumetric heterogeneity and spatial relationships throughout the ROI.
+  - Suitable for volumetric imaging modalities (e.g., 3D MRI, CT).
+- **Disadvantages**:
+  - Computationally more expensive.
+  - Sensitive to voxel anisotropy (non-uniform voxel dimensions in different directions).
+
+### 2D Feature Extraction
+
+- **Definition**: Involves analyzing the ROI slice-by-slice, effectively treating each **2D slice** in the ROI independently.
+- **How it works**: Features are extracted for each 2D plane separately, and the spatial relationships in the third dimension are ignored.
+- **Example**: Texture features are calculated based on voxel neighbors within a 2D plane (8-neighborhood connectivity for 2D).
+- **Advantages**:
+  - Useful for inherently 2D acquisitions (e.g., ultrasound, certain MRI sequences acquired slice-by-slice).
+  - Avoids artifacts or errors introduced by anisotropic voxels.
+- **Disadvantages**:
+  - Does not capture volumetric information or spatial relationships between slices.
+  - Results in multiple feature sets (one per slice), which may require aggregation (e.g., mean, median).
+
+---
+
+### The `force2D` Parameter
+
+```yaml
+force2D: true
+force2Ddimension: 0
+```
+
+#### What `force2D` Does
+
+- **Purpose**: Forces PyRadiomics to extract features **in 2D** instead of 3D, regardless of whether the input image is 3D.
+- **Behavior**:
+  - When `force2D: true`, the software processes each slice independently.
+  - Features are calculated within the 2D plane defined by the `force2Ddimension` parameter (e.g., axial, coronal, sagittal).
+
+### The `force2Ddimension` Parameter
+
+- **Definition**: Specifies the plane along which 2D slicing occurs:
+  - `0` → Axial plane (default for most MRI/CT data).
+  - `1` → Coronal plane.
+  - `2` → Sagittal plane.
+
+For example:
+- If your MRI volume is axial, set `force2Ddimension: 0` to extract features for each axial slice separately.
+
+### Use Cases for `force2D: true`
+
+1. **Slice-by-Slice Analysis**:
+   - For scenarios where the tumor or lesion varies significantly across slices, 2D analysis provides per-slice feature sets for detailed evaluation.
+   - Common in certain MRI studies, like evaluating orbital tumors in axial slices.
+2. **Avoiding Inter-Slice Artifacts**:
+   - When voxel dimensions are anisotropic (e.g., much thicker slices along Z than X/Y), 3D extraction can be biased. 2D extraction avoids this by only considering the isotropic in-plane resolution.
+
+### What Happens in 2D Mode
+
+- The ROI is segmented and processed for each slice independently.
+- For each slice containing ROI pixels, PyRadiomics computes features.
+- The output for multiple slices can either be analyzed slice-by-slice or aggregated (e.g., mean, median) for a single representative feature set.
+
+---
+
+### Comparison: 2D vs. 3D Feature Extraction
+
+| **Aspect**            | **2D Extraction**                                    | **3D Extraction**                                    |
+|------------------------|------------------------------------------------------|-----------------------------------------------------|
+| **Scope**             | Slice-by-slice (2D plane)                            | Entire 3D volume                                   |
+| **Neighborhood**      | 8-neighborhood (within slice)                        | 26-neighborhood (across slices and planes)         |
+| **Input**             | 2D slices or 3D volume (processed as 2D slices)      | 3D volume                                          |
+| **Computational Load**| Lower (processes each slice separately)              | Higher (processes the entire volume at once)       |
+| **Use Case**          | Slice-wise variability, anisotropic voxels, ultrasound | 3D volumetric data, isotropic resolution, CT/MRI   |
+| **Output**            | Features per slice or aggregated across slices       | Single feature set for the entire volume           |
+
+---
+
+#### Practical Recommendation
+
+- **Use `force2D: true` when**:
+  - Your input data or segmentation mask is slice-based (e.g., orbital MRI).
+  - There is significant anisotropy in voxel spacing.
+  - You need per-slice feature extraction.
+- **Use 3D mode when**:
+  - The segmentation mask spans the entire tumor or ROI across multiple slices, and volumetric relationships are important.
