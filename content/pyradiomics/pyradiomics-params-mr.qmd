@@ -1,0 +1,310 @@
+---
+title: MRI Parameters
+code-fold: true
+---
+
+
+
+## Thin-slice MRI Radiomics (3 mm)
+
+- [exampleMR_3mm.yaml](https://github.com/AIM-Harvard/pyradiomics/blob/master/examples/exampleSettings/exampleMR_3mm.yaml)
+
+The **`exampleMR_3mm.yaml`** configuration file is tailored for **thin-slice MRI scans** (~3 mm slice thickness). Thin slices offer better spatial resolution and are particularly useful for detecting fine anatomical details, but they also introduce considerations for radiomics analysis. Below, I’ll explain why this setting is appropriate for such data.
+
+
+
+### `imageType`
+
+```yaml
+imageType:
+  Original: {}
+  LoG:
+    sigma: [2.0, 3.0, 4.0, 5.0]
+  Wavelet: {}
+```
+
+- **`Original`:** Features are extracted directly from the unfiltered image, capturing raw intensity and texture information.
+- **`LoG` (Laplacian of Gaussian):**
+  - Highlights edges and regions with specific spatial scales, determined by `sigma` values.
+  - **Thin slices:** Sigma values ≥ 2 mm are appropriate to avoid noise sensitivity at very fine scales. 
+  - Larger sigma values (e.g., 4.0, 5.0) capture coarser textures, which can be useful for thin slices with isotropic voxels.
+- **`Wavelet`:** Decomposes the image into multi-frequency components, capturing texture at multiple scales.
+
+
+### `featureClass`
+
+```yaml
+featureClass:
+  shape:
+  firstorder:
+  glcm:
+    - 'Autocorrelation'
+    - 'ClusterProminence'
+    - ... (remaining GLCM features)
+  glrlm:
+  glszm:
+  gldm:
+```
+
+- **Included Feature Classes:**
+  - **`shape`:** Extracts 3D geometric features such as volume, surface area, compactness, and sphericity.
+  - **`firstorder`:** Basic intensity statistics (mean, median, skewness, etc.), critical for characterizing signal distributions in MR data.
+  - **`glcm`:** Gray Level Co-occurrence Matrix for texture features, with a custom list of relevant features enabled (e.g., `Contrast`, `Correlation`).
+  - **`glrlm`, `glszm`, `gldm`:** Additional texture-based feature classes for advanced heterogeneity analysis.
+
+- **Exclusions:**
+  - The `SumAverage` GLCM feature is excluded due to redundancy with other intensity-related features.
+
+
+### `setting: normalize`
+
+
+```yaml
+  normalize: true
+  normalizeScale: 100
+```
+
+- **Why Normalize for MRI?**
+  - MRI intensity values are relative and vary by scanner, vendor, and protocol. Normalization ensures consistency across scans.
+  - **Thin slices:** Often have higher intensity variability within a region due to better spatial resolution, making normalization even more critical.
+- **Normalization Scale (`normalizeScale`):**
+  - Rescales normalized values to a range suitable for radiomics calculations (e.g., ~[0, 100]).
+
+
+### `setting: resampledPixelSpacing`
+
+
+```yaml
+  resampledPixelSpacing: [2, 2, 2]
+```
+
+- **Why Resample?**
+  - Ensures isotropic voxels (uniform resolution in all directions) for consistent feature extraction.
+  - Thin slices (e.g., ~3 mm) typically have anisotropic voxels where the in-plane resolution is finer than the slice thickness.
+  - Resampling to **[2, 2, 2] mm** balances computational efficiency with spatial detail:
+    - Coarser resampling (e.g., [2, 2, 2]) reduces noise and ensures stability for texture features.
+    - Avoids overly fine resampling (e.g., [1, 1, 1]), which could introduce artifacts or excessive computational load.
+
+
+
+### `setting: binWidth`
+
+```yaml
+  binWidth: 5
+```
+- **Why Bin Width Matters:**
+  - Texture features (e.g., GLCM, GLRL) rely on discretizing intensity values into bins.
+  - The choice of bin width affects sensitivity to small intensity differences and the stability of extracted features.
+  - **Bin Width = 5**:
+    - Appropriate for MRI datasets with thin slices, where intensity ranges are typically smaller than CT data.
+    - Results in a manageable number of bins (~16–128), improving the stability and interpretability of texture features.
+
+---
+
+### `setting: voxelArrayShift`
+
+```yaml
+  voxelArrayShift: 300
+```
+
+- **Purpose:**
+  - Shifts voxel intensities by 300 to make most values positive after normalization (mean-centered normalization can produce negative values).
+  - Ensures numerical stability for feature extraction.
+- **Why It’s Important for MRI:**
+  - Thin-slice MRI often has a wider intensity distribution due to finer spatial detail, so the shift prevents issues with negative voxel values.
+
+
+
+### `setting: interpolator`
+
+```yaml
+  interpolator: 'sitkBSpline'
+```
+
+- **`sitkBSpline` (interpolation):**
+  - Smooths voxel intensities during resampling to preserve detail without introducing artifacts.
+  - Works well with the inherently smooth nature of MRI data.
+
+
+
+### Other Notes
+
+- **GLCM Feature Selection:** Disabling redundant features like `SumAverage` ensures computational efficiency and avoids feature redundancy.
+- **Resampling Trade-Offs:**
+  - Resampling to [2, 2, 2] sacrifices some detail but ensures robust feature calculation, which is critical for thin slices with high resolution.
+
+
+### Why It’s Appropriate for Thin-Slice MRI
+
+1. **Normalization**: Accounts for scanner variability and relative MRI intensities.
+2. **Resampling**: Reduces the effect of anisotropy while preserving sufficient detail for texture analysis.
+3. **Feature Selection**: Focuses on features that leverage the higher resolution of thin slices (e.g., texture, shape).
+4. **Bin Width and Shift**: Optimized for MRI intensity ranges and ensures numerical stability.
+5. **LoG Filtering**: Emphasizes spatial details at multiple scales, appropriate for high-resolution data.
+
+## Thick-slice MRI Radiomics (5 mm)
+
+- [exampleMR_5mm.yaml](https://github.com/AIM-Harvard/pyradiomics/blob/master/examples/exampleSettings/exampleMR_5mm.yaml)
+
+::: {.callout-tip appearance="simple" collapse="true"}
+#### exampleMR_5mm.yaml
+
+
+```{.yaml}
+#| code-fold: true
+
+# This is an example of settings that can be used as a starting point for analyzing MR data with large(r) (~5mm) slice
+# thickness. This is only intended as a starting point and is not likely to be the optimal settings for your dataset.
+# Some points in determining better values are added as comments where appropriate
+
+# When adapting and using these settings for an analysis, be sure to add the PyRadiomics version used to allow you to
+# easily recreate your extraction at a later timepoint:
+
+# #############################  Extracted using PyRadiomics version: <version>  ######################################
+
+imageType:
+  Original: {}
+  LoG:
+    # Because of resampling to (3, 3, 3), the use of sigmas < 3 mm is not recommended.
+    sigma: [3.0, 5.0]
+  Wavelet: {}
+
+featureClass:
+  # redundant Compactness 1, Compactness 2 an Spherical Disproportion features are disabled by default, they can be
+  # enabled by specifying individual feature names (as is done for glcm) and including them in the list.
+  shape:
+  firstorder:
+  glcm:  # Disable SumAverage by specifying all other GLCM features available
+    - 'Autocorrelation'
+    - 'JointAverage'
+    - 'ClusterProminence'
+    - 'ClusterShade'
+    - 'ClusterTendency'
+    - 'Contrast'
+    - 'Correlation'
+    - 'DifferenceAverage'
+    - 'DifferenceEntropy'
+    - 'DifferenceVariance'
+    - 'JointEnergy'
+    - 'JointEntropy'
+    - 'Imc1'
+    - 'Imc2'
+    - 'Idm'
+    - 'Idmn'
+    - 'Id'
+    - 'Idn'
+    - 'InverseVariance'
+    - 'MaximumProbability'
+    - 'SumEntropy'
+    - 'SumSquares'
+  glrlm:
+  glszm:
+  gldm:
+
+setting:
+  # Normalization:
+  # MR signal is usually relative, with large differences between scanners and vendors. By normalizing the image before
+  # feature calculation, this confounding effect may be reduced. However, if only one specific scanner is used, or the
+  # images reflect some absolute world value (e.g. ADC maps, T2maps (NOT T2 weighted)), consider disabling the
+  # normalization.
+  normalize: true
+  normalizeScale: 100  # This allows you to use more or less the same bin width.
+
+  # Resampling:
+  # Increasing the resampled spacing forces PyRadiomics to look at more coarse textures, which may or
+  # may not increase accuracy and stability of your extracted features. Using a small spacing in large slices generates
+  # many interpolated voxels, potentially 'masking' the signal contained in the image.
+  interpolator: 'sitkBSpline'
+  resampledPixelSpacing: [3, 3, 3]
+
+  # Mask validation:
+  # correctMask and geometryTolerance are not needed, as both image and mask are resampled, if you expect very small
+  # masks, consider to enable a size constraint by uncommenting settings below:
+  #minimumROIDimensions: 2
+  #minimumROISize: 50
+
+  # Image discretization:
+  # The ideal number of bins is somewhere in the order of 16-128 bins. A possible way to define a good binwidt is to
+  # extract firstorder:Range from the dataset to analyze, and choose a binwidth so, that range/binwidth remains approximately
+  # in this range of bins.
+  binWidth: 5
+
+  # first order specific settings:
+  # When normalizing, gray values below the mean will be negative. Shifting by 300 (3 StdDevs * 100) ensures that the
+  # majority of voxels is positive (only outliers >3 SD lower than the mean will be negative).
+  voxelArrayShift: 300
+
+  # Misc:
+  # default label value. Labels can also be defined in the call to featureextractor.execute, as a commandline argument,
+  # or in a column "Label" in the input csv (batchprocessing)
+  label: 1
+```
+
+:::
+
+
+The **`exampleMR_5mm.yaml`** file is tailored for MRI scans with larger slice thickness (~5 mm) and has several differences compared to the thin-slice setting (`exampleMR_3mm.yaml`). Below is a detailed comparison of the key parameters, explaining the reasoning behind each setting and its adaptation for the specific slice thickness.
+
+---
+
+### Thick vs Thin-Slice Comparison
+
+| **Parameter**              | **Thin Slice (`exampleMR_3mm.yaml`)**               | **Thick Slice (`exampleMR_5mm.yaml`)**               | **Explanation**                                                                                                   |
+|-----------------------------|----------------------------------------------------|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| **`resampledPixelSpacing`** | `[2, 2, 2]`                                         | `[3, 3, 3]`                                          | Larger resampling spacing for thicker slices. Thicker slices have less detail along the z-axis; coarse resampling avoids over-smoothing. |
+| **`LoG: sigma`**            | `[2.0, 3.0, 4.0, 5.0]`                             | `[3.0, 5.0]`                                         | Thicker slices capture coarser details, so only larger sigma values are relevant to avoid noise sensitivity.       |
+| **Normalization (`normalize`)** | `true`                                            | `true`                                              | Normalization remains consistent because MRI intensity values vary across scanners regardless of slice thickness.  |
+| **Normalization Scale (`normalizeScale`)** | `100`                                             | `100`                                               | Both settings use the same normalization scale, as this does not depend on slice thickness.                        |
+| **Image Discretization (`binWidth`)** | `5`                                              | `5`                                                 | Same bin width for consistency in texture calculation. The choice is determined by intensity range, not slice thickness. |
+| **`Wavelet` Transformation** | Enabled                                            | Enabled                                             | Wavelet remains enabled in both settings because it captures multi-scale texture features independent of slice thickness. |
+| **Shape Features (`shape`)** | Enabled                                            | Enabled                                             | Both settings extract shape features, which are critical for volumetric analysis regardless of slice thickness.    |
+| **GLCM Features (`glcm`)**   | Full list of GLCM features enabled                 | Full list of GLCM features enabled                  | Same set of GLCM features for texture analysis; differences arise from spatial resolution and resampling settings. |
+| **`voxelArrayShift`**        | `300`                                              | `300`                                               | Same shift value to handle negative voxel intensities after normalization.                                         |
+
+---
+
+### Key Differences and Rationale
+
+1. **`resampledPixelSpacing`**
+   - **3mm Setting:** `[2, 2, 2]` provides finer resolution for thin slices, preserving more texture detail along all axes.
+   - **5mm Setting:** `[3, 3, 3]` ensures stability by coarsening the resampling grid to match the thicker slices, avoiding over-interpolation.
+   - **Rationale:** Thicker slices already have reduced detail along the z-axis. Coarser resampling aligns better with the inherent resolution, ensuring that texture features are representative.
+
+2. **`LoG: sigma`**
+   - **3mm Setting:** `[2.0, 3.0, 4.0, 5.0]` includes smaller sigma values to capture finer spatial details present in thin slices.
+   - **5mm Setting:** `[3.0, 5.0]` focuses on coarser textures, as finer details are less likely to exist in thicker slices.
+   - **Rationale:** Smaller sigma values (<3.0) are not meaningful for thicker slices due to limited resolution.
+
+3. **Wavelet Transformation**
+   - **Both Settings:** Enabled in both cases to analyze multi-scale textures.
+   - **Rationale:** Wavelet features are not directly affected by slice thickness and remain applicable for both settings.
+
+4. **Normalization**
+   - **Both Settings:** Normalization (`normalize: true`) is used for both settings.
+   - **Rationale:** MRI intensities are relative and scanner-dependent regardless of slice thickness, so normalization is necessary in both cases.
+
+5. **Resampling Trade-Off**
+   - **3mm Setting:** Smaller voxel spacing (`[2, 2, 2]`) allows capturing finer textures.
+   - **5mm Setting:** Coarser voxel spacing (`[3, 3, 3]`) prevents excessive computational overhead and avoids artifacts due to interpolation noise.
+
+6. **GLCM Features**
+   - **Both Settings:** Full set of GLCM features is included in both, as these are essential for texture analysis.
+   - **Rationale:** The choice of GLCM features is not affected by slice thickness, but the resolution of the resampling affects the calculated values.
+
+7. **Discretization (`binWidth`)**
+   - **Both Settings:** Bin width of 5 is used in both settings.
+   - **Rationale:** Bin width is determined by the intensity range of the MRI data, not the slice thickness.
+
+8. **`voxelArrayShift`**
+   - **Both Settings:** `300` is used in both settings.
+   - **Rationale:** Ensures positive intensities after normalization for numerical stability, applicable for both thin and thick slices.
+
+
+### **Conclusion**
+
+The key differences in **`exampleMR_3mm.yaml`** (thin slice) vs. **`exampleMR_5mm.yaml`** (thick slice) lie in the resampling settings (`resampledPixelSpacing`) and the `LoG` filter sigma values. These adjustments align with the spatial resolution and expected level of detail in the data:
+
+- **Thin Slice Setting (3 mm):** Optimized for finer spatial details and textures with higher resolution.
+- **Thick Slice Setting (5 mm):** Adjusted for coarser spatial features, reducing sensitivity to interpolation artifacts.
+
+Would you like further assistance tailoring these configurations to your specific dataset or workflow?
