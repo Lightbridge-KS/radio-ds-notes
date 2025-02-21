@@ -33,6 +33,9 @@ book:
         - "content/slicer/slicer-intro.qmd"
         - "content/slicer/slicer-MR-field-correct.qmd"
         - "content/slicer/slicer-segment.qmd"
+    - part: "LLM"
+      chapters:
+        - "content/LLM/recist-extract-basic.ipynb"
     - references.qmd
 
 
