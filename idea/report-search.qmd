@@ -1,0 +1,172 @@
+# Radiology Report Search
+
+
+::: {.callout-note appearance="default" collapse="true"}
+
+#### Problem statement
+
+In my radiology department unit, the radiologist write a radiology report and stored as HTML text, which will appears in RESULT_TEXT_HTML column in a SQL-based relational database. However, there is currently no structured system to query radiology report other than simple keyword search via SQL or regex-based report query. 
+
+#### Proposed Solution
+
+One of the solution is:
+
+I would like to implement a keyword tagging (e.g., ICD-10, RadLex) system to each radiology report by using a large-language model to read the text in radiology report and tag it. 
+
+#### Use Cases
+
+The use case of this might be: 
+
+1. Research query: To find multiple cases in bulk (e.g., query for "ischemic stroke") based on radiology report for a research study. 
+2. Report search system: A radiologist or radiology resident might use this to quickly find a cases with similar diagnosis to be an example of how to write a radiology report.  
+
+#### Question
+
+What would be your recommended database framework/technologies to support this?
+:::
+
+Below is a recommended architecture and set of technologies to help you implement **keyword (ICD-10, RadLex) tagging** and improve the querying of your radiology reports. The solution aims to complement your existing SQL-based relational database while enabling advanced text search, tagging, and research functionality.
+
+---
+
+## 1. Keep the Existing Relational Database for Core Data
+
+Your current SQL database can remain the **source of truth** for all patient-related data (patient ID, exam dates, metadata), including storing the **HTML text** of each radiology report. This preserves:
+- Familiar relational structure for patient demographics and exam records.
+- Existing query capabilities for standard transactional or simple reporting needs.
+
+**Action**:  
+- Add a new relational table or extend your existing table to store the **LLM-generated tags** (ICD-10 codes, RadLex terms, etc.) in a structured format, e.g.:
+
+```sql
+CREATE TABLE radiology_report_tags (
+   report_id       INT,
+   icd10_codes     TEXT[],     -- or a separate many-to-many table
+   radlex_terms    TEXT[],     -- same approach
+   ...
+   PRIMARY KEY (report_id)
+);
+
+-- Alternatively, store them in JSONB (if using PostgreSQL).
+```
+
+This structure makes it straightforward to do:
+```sql
+SELECT * 
+FROM radiology_report_tags 
+WHERE icd10_codes @> '{"I63"}';  -- example ICD-10 for ischemic stroke
+```
+
+*(Exact syntax depends on your SQL dialect.)*
+
+---
+
+## 2. Add a Full-Text or Semantic Search Layer
+
+### Option A: Built-In Full-Text Search (e.g., PostgreSQL)
+If you can migrate or already use **PostgreSQL**, you can leverage its **native full-text search** (FTS) features or its **pg_trgm** extension for fuzzy matching. This allows you to:
+- Create an FTS index over the `RESULT_TEXT_HTML` column.
+- Combine SQL filtering (e.g., by patient ID, date range) with textual relevance queries.
+
+**Pros**:  
+- Single DB for both structured data and text search.  
+- Less operational overhead than a separate search engine.  
+- Great for moderate-sized data.
+
+**Cons**:  
+- May become slow at very large data scales if you have billions of reports.  
+- FTS queries, while powerful, might be less flexible than specialized search engines or vector search.
+
+### Option B: Dedicated Search Engine (e.g., Elasticsearch / OpenSearch)
+For more advanced text search (fuzzy matching, advanced relevancy scoring, synonyms, etc.), you can:
+1. **Ingest** radiology reports (and tags) into **Elasticsearch** or **OpenSearch** indexes.
+2. Use **synonym dictionaries** for medical terms, ICD-10 expansions, or RadLex synonyms.  
+3. Perform **bool queries** or **fuzzy queries** to find relevant reports.
+
+**Pros**:  
+- Scales well for large data volumes.  
+- Rich querying and analytics tools (Kibana, etc.).  
+- Efficient indexing and near real-time search.
+
+**Cons**:  
+- Additional infrastructure to maintain (separate from the relational DB).  
+- Requires a pipeline to keep Elasticsearch/OpenSearch in sync with the primary DB.
+
+### Option C: Vector (Semantic) Search (e.g., pgvector, Milvus, Pinecone)
+If you’re using a **Large Language Model (LLM)** to generate embeddings (representations of text in a dense vector space), you can store those embeddings in:
+- A **vector database** (Milvus, Pinecone, Qdrant, Weaviate)  
+- **PostgreSQL** with the **pgvector extension**  
+
+Then you can do **semantic search** queries (e.g., “find reports most semantically similar to this text: ‘ischemic stroke in right MCA territory’”) even if the exact keywords aren’t present.
+
+**Pros**:  
+- More robust “conceptual” matching (synonyms, paraphrases).  
+- Great for LLM-based search or question answering pipelines.
+
+**Cons**:  
+- Requires maintaining embeddings and re-indexing them if your data or model changes.  
+- Not as straightforward for pure structured queries; typically used in conjunction with relational or full-text approaches.
+
+---
+
+## 3. Store the LLM-Generated Tags as Structured Data
+1. **Extraction Pipeline**  
+   - A background job or microservice uses the LLM to read each `RESULT_TEXT_HTML`, extracts ICD-10 or RadLex tags, and writes those tags back to your relational database.
+2. **Structured Query**  
+   - Researchers or radiologists can filter by patient attributes (date range, hospital ID) **AND** the extracted tags (e.g., ICD-10 = “I63” for ischemic stroke).
+3. **Textual or Semantic Search**  
+   - If the user’s query is more free-form (e.g., “cases that look like a subacute stroke”), you leverage a text search layer or vector search to return the best matches.
+
+**Example Flow**:
+1. **Data ingestion**: A new report arrives in your SQL DB with the raw HTML in `RESULT_TEXT_HTML`.
+2. **Tag generation** (batch or event-based):  
+   - You call your LLM-based service → it outputs `[“I63”, “RadLex:RID6474”]` (example tags).  
+   - Store them in a tags table or JSON column.  
+3. **Search**:  
+   - (A) **Keyword search** → use SQL full-text or dedicated search engine to find “stroke.”  
+   - (B) **Tag-based search** → `WHERE icd10_codes @> '["I63"]'`.  
+   - (C) **Semantic** → pass a query to a vector store or a semantic retrieval pipeline.
+
+---
+
+## 4. Example Stack Combinations
+
+| **Layer**                   | **Option A** (Simplest)         | **Option B** (Scalable)                            | **Option C** (Advanced Semantic)                                  |
+|----------------------------|----------------------------------|----------------------------------------------------|--------------------------------------------------------------------|
+| **Relational DB**          | PostgreSQL (with `RESULT_TEXT_HTML` & tags) | Same, or MS SQL Server / Oracle for structured data | Same, or any SQL DB for core structured data                       |
+| **Text Indexing**          | PostgreSQL FTS + `pg_trgm`       | Elasticsearch / OpenSearch                         | Vector DB (Milvus/Pinecone/pgvector) for embeddings                |
+| **Tag Storage**            | JSONB or relational table        | Same (can also push tags to ES for indexing)       | Same, plus embeddings stored in vector DB                          |
+| **Query Interface**        | SQL (with FTS)                   | ES DSL or Kibana, plus DB queries                  | Vector similarity search + DB queries                              |
+
+**Recommendation**:  
+- **If you want a simpler approach** to get started: use **PostgreSQL** with the **full-text** extensions and store the tags in a **JSONB** or a separate table.  
+- **If you need advanced analytics, fuzzy matching, and you expect large scale**: use **Elasticsearch/OpenSearch** or a **Vector DB** for better performance and flexible search. Keep relational data in your SQL DB, and push the textual data + tags + embeddings to the search engine.
+
+---
+
+## 5. Radiology Use Case Summary
+1. **Research Query**  
+   - Researchers can quickly find relevant imaging studies (e.g., “ischemic stroke” or ICD-10 = I63) across thousands of archived reports.  
+   - LLM-based tagging ensures “stroke” synonyms (e.g., CVA, infarct) all map to the correct ICD code or RadLex concept.
+2. **Report Search System**  
+   - Radiologists can search for “similar cases” using a **semantic search** approach (like vector embeddings).  
+   - They can also do a direct **keyword** or **tag-based** query if they want narrower results.
+
+### Example Flow for “Ischemic Stroke” Search
+1. **LLM** tags each report with `["I63", "stroke", …]`.
+2. The user enters “Find me all ischemic stroke reports from 2024 that mention subacute changes.”  
+3. Your application queries the **structured tags** (ICD-10 = “I63”) plus any mention of “subacute” in the text index.  
+4. The system returns a curated list of matching reports (with optional preview snippets).
+
+---
+
+## **Final Recommendation**
+
+- **Retain your current SQL-based system** as the canonical data store for patient records and raw HTML reports.
+- **Introduce an LLM-based pipeline** that generates and stores **structured tags** (ICD-10, RadLex) in a separate table or JSON column.
+- **Add a specialized search layer**:
+  - For moderate scale: PostgreSQL Full Text Search (simple, all-in-one).
+  - For large scale or more advanced text analytics: **Elasticsearch** or **OpenSearch**.
+  - For **semantic queries**: a **vector store** (pgvector, Milvus, Pinecone) to store embeddings for more concept-based searches.
+  
+This hybrid approach **preserves** your relational architecture while **enabling** advanced text/semantic queries and powerful tagging for research and day-to-day radiologist searches.

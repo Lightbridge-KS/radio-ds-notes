@@ -9,7 +9,12 @@ book:
   site-url: https://radio-ds-notes-lightbridge.netlify.app
   chapters:
     - index.qmd
-    - part: Basic
+    - part: Data Architecture
+      chapters: 
+        - "content/data-architect/database-explained.qmd"
+        - "content/data-architect/database-lakehouse.qmd"
+        - "content/data-architect/radioclinic-story.qmd"
+    - part: Files in Radiology
       chapters: 
         - "content/dicom.qmd"
         - "content/dicom-tags.qmd"
@@ -36,6 +41,9 @@ book:
     - part: "LLM"
       chapters:
         - "content/LLM/recist-extract-basic.ipynb"
+    - part: "Idea"
+      chapters: 
+        - "idea/report-search.qmd"
     - references.qmd
 
 

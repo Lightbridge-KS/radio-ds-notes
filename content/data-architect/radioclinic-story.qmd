@@ -1,0 +1,327 @@
+# Radiology Clinic Story
+
+## Stage 1: Spread sheet
+
+::: {.callout-note appearance="simple" collapse="false"}
+Let’s start simple by what if I run a local small radiology clinic which only provide CXR in a small village. The resource in this stage are only Excel and Google Sheets.
+
+Give me an example story based on this and shows how this would operate. Then, I’ll tell you to scale up from this later. 
+:::
+
+
+Below is a simple, **narrative-style** example illustrating how a small radiology clinic in a rural village might manage its data using **only Excel or Google Sheets**. We’ll follow the day-to-day flow of patient visits, X-ray imaging, and basic record-keeping.
+
+---
+
+**A Small Radiology Clinic in Cedar Village**
+
+**Clinic Profile**  
+- **Modality**: Chest X-Ray (CXR) only  
+- **Staff**: One radiologist, one technician, one receptionist  
+- **Technology Tools**: 
+  - Excel or Google Sheets for data tracking  
+  - Basic desktop computer or laptop  
+  - Local storage for DICOM images (e.g., external hard drive or DVD)
+
+### Patient Check-In
+
+- **Morning**: Mr. John arrives with a referral for a chest X-ray.  
+- **Receptionist Role**:
+  1. Opens the **“CedarVillageClinicData.xlsx”** spreadsheet (or Google Sheets equivalent).  
+  2. Enters the patient details on a new row:  
+     - **Date**: 2025-02-25  
+     - **Patient Name**: John Doe  
+     - **Age**: 45  
+     - **Reason for Exam**: Persistent cough  
+     - **Referral Doctor**: Dr. Smith  
+  3. Assigns a **unique ID** (e.g., `CVC-0001`) for the visit.
+
+**Spreadsheet Columns** might include:  
+
+| Patient ID | Date       | Name      | Age | Reason for Exam | Referring Doctor | Radiologist | Findings          | Billing Status |
+|------------|-----------|-----------|-----|-----------------|------------------|------------|-------------------|---------------|
+| CVC-0001   | 2025-02-25 | John Doe  | 45  | Persistent cough| Dr. Smith        |            |                   | Not Paid      |
+
+> *Note: The receptionist marks the billing status as “Not Paid” initially.*
+
+---
+
+### Image Acquisition
+
+- **Technician Role**:
+  1. Guides Mr. John for the chest X-ray.  
+  2. Saves the DICOM file to a local folder, naming it with the **patient ID** (e.g., `CVC-0001.dcm`).  
+  3. Optional: If there’s no PACS system, they might keep a manual index of each file on a shared folder or external drive.  
+
+**Local Folder Example**:  
+
+```
+/RadiologyImages/
+  └── CVC-0001/
+       └── CVC-0001.dcm
+  └── CVC-0002/
+       └── ...
+```
+
+- If they want a simple log, the technician can have a second spreadsheet:  
+  
+  | Patient ID | File Location                     | Date       | Notes           |
+  |------------|-----------------------------------|-----------|-----------------|
+  | CVC-0001   | /RadiologyImages/CVC-0001/CVC-0001.dcm | 2025-02-25 | Image captured OK |
+
+---
+
+### Radiologist Reading
+
+- **Radiologist Role**:
+  1. Opens the chest X-ray image (e.g., using a DICOM viewer).  
+  2. Performs diagnostic interpretation.  
+  3. Enters **Findings** in the same Excel/Sheets row used by the receptionist.
+
+**Updated Spreadsheet Row**:  
+
+| Patient ID | Date       | Name      | Age | Reason for Exam  | Referring Doctor | Radiologist  | Findings                                | Billing Status |
+|------------|-----------|-----------|-----|------------------|------------------|--------------|------------------------------------------|---------------|
+| CVC-0001   | 2025-02-25 | John Doe  | 45  | Persistent cough | Dr. Smith        | Dr. Patel    | Mild patchy infiltrates in left mid-lung | Pending       |
+
+> *Note: “Pending” or “Reported” might be used to track diagnostic status. The radiologist can update the “Radiologist” column with their name.*
+
+---
+
+### Billing & Record Completion
+
+- **Receptionist / Billing Role**:
+  1. Once the exam is interpreted, finalizes the bill (cash, insurance, or local subsidy).  
+  2. Updates **Billing Status** to “Paid” after receiving payment.  
+  3. If using Google Sheets, the receptionist can share a **view-only link** with the local health authority if needed.
+
+**Final Spreadsheet Row**:  
+
+| Patient ID | Date       | Name     | Age | Reason for Exam  | Referring Doctor | Radiologist | Findings                                | Billing Status |
+|------------|-----------|----------|-----|------------------|------------------|------------|------------------------------------------|---------------|
+| CVC-0001   | 2025-02-25 | John Doe | 45  | Persistent cough | Dr. Smith        | Dr. Patel  | Mild patchy infiltrates in left mid-lung | Paid          |
+
+---
+
+### Basic Analytics & Reporting
+
+At the end of the week or month, the clinic’s staff can use **Excel/Google Sheets** features (PivotTables, Charts) to get simple insights:
+
+1. **Number of X-rays per month**  
+   - Create a PivotTable grouping by **Month(Date)**.  
+2. **Most common reasons for exam**  
+   - Group by **Reason for Exam** and count.  
+3. **Cash Flow**  
+   - Track how many patients have “Paid” vs. “Not Paid.”  
+
+Example PivotTable:  
+
+
+| Reason for Exam    | Count of Patients |
+|--------------------|-------------------|
+| Persistent cough   |  10              |
+| Pre-employment CXR |   4              |
+| TB screening       |   2              |
+
+---
+
+### Story Wrap-Up
+
+1. **Morning**: Reception logs patients in the spreadsheet.  
+2. **Midday**: Technician acquires images; files labeled by patient ID.  
+3. **Afternoon**: Radiologist reads X-rays and updates the spreadsheet with findings.  
+4. **End of Day**: Reception ensures billing status is accurate.  
+5. **End of Month**: Staff reviews a pivot table to see how many patients were screened for TB, average age, or total exams done.  
+
+---
+
+**Takeaways**
+
+- **Simple & Low-Cost**: Storing data in Excel/Google Sheets is enough for a small practice with limited patient volume.  
+- **Manual Processes**: Staff must be diligent in **data entry, file naming**, and **quality control** to prevent mix-ups or data loss.  
+- **Minimal Analytics**: Spreadsheets provide basic reporting (counts, sums, pivot tables).  
+- **Future Growth**: As the clinic grows, or as the volume of images increases, you might look to more robust solutions—like a small PACS system, basic databases, or eventually a data lake/data warehouse approach.
+
+---
+
+**Next Step**  
+
+If the clinic volume scales up, or if you want more advanced capabilities (e.g., automated backup, more structured patient databases, or integration with AI), we’d move beyond spreadsheets into more sophisticated data management. 
+
+But as a **starting point** for a single-modality, low-volume clinic, **Excel** or **Google Sheets** combined with **local image storage** can be enough to cover basic workflows:
+- **Patient tracking**
+- **Image index**
+- **Exam reporting**
+- **Simple billing and analytics**  
+
+This foundational setup paves the way for a gradual transition to more advanced systems as needs and budgets allow.
+
+## Stage 2: Relational Databases (SQL)
+
+
+::: {.callout-note appearance="minimal" collapse="false"}
+Good job! Now, let's scale up by introduction of SQL database. What would the story now be. Where would the CXR images store. Write your story. 
+:::
+
+
+Below is a short **narrative-style** scenario showing how a once small radiology clinic upgrades from spreadsheets to a **SQL database**, while still using **chest X-ray (CXR)** as the primary imaging modality. We’ll see where the data goes, how the workflow changes, and how images are stored and referenced.
+
+---
+
+**A Growing Radiology Clinic: Transition to SQL**
+
+**Clinic Profile**  
+
+- **Modality**: Chest X-Ray (CXR)  
+- **Staff**: One radiologist, one technician, one receptionist, plus part-time IT support  
+- **Technology Tools**:  
+  - A small **SQL database** (e.g., MySQL or PostgreSQL)  
+  - Local or network-attached storage (NAS) for images  
+  - A simple web or desktop front-end that communicates with the SQL database
+
+### Upgraded Workflow Overview
+
+1. **Patient Check-In**: Reception enters patient info into a **web form** connected to the SQL database.  
+2. **Image Capture**: Technologist acquires CXR images and saves them to a local server or NAS; an **image path** is stored in the database.  
+3. **Radiologist Reading**: Radiologist logs into the system, retrieves patient info and image location from the database, then opens the image via a DICOM viewer.  
+4. **Report Entry & Billing**: Radiologist enters findings into the system, and the receptionist updates the billing status in the SQL database.
+
+---
+
+### Database Schema
+
+To replace spreadsheets, the clinic designs a **relational schema** with the following tables:
+
+1. **patients**  
+   
+   | Field         | Type         | Description                                    |
+   |---------------|-------------|------------------------------------------------|
+   | patient_id    | INT (PK)     | Unique auto-increment ID for the patient       |
+   | first_name    | VARCHAR(50)  | Patient’s first name                           |
+   | last_name     | VARCHAR(50)  | Patient’s last name                            |
+   | birth_date    | DATE         | Patient’s date of birth                        |
+   | contact_info  | VARCHAR(100) | Email/phone (optional)                         |
+
+2. **exams**  
+   
+   | Field         | Type          | Description                                                          |
+   |---------------|--------------|----------------------------------------------------------------------|
+   | exam_id       | INT (PK)      | Unique auto-increment ID for the exam                               |
+   | patient_id    | INT (FK)      | References patients.patient_id                                      |
+   | exam_date     | DATE          | Date of the exam                                                    |
+   | reason_for_exam | VARCHAR(100)| Why the exam was requested (e.g., cough, screening)                |
+   | referring_doctor | VARCHAR(50) | Name of the referring doctor                                       |
+   | image_path    | VARCHAR(255)  | File path or URL to the stored DICOM image(s)                       |
+   | billing_status | VARCHAR(20)  | E.g. ‘Not Paid’, ‘Pending’, ‘Paid’                                  |
+
+3. **reports** 
+    
+   | Field         | Type          | Description                                   |
+   |---------------|--------------|-----------------------------------------------|
+   | report_id     | INT (PK)      | Unique auto-increment ID for the report      |
+   | exam_id       | INT (FK)      | References exams.exam_id                     |
+   | radiologist   | VARCHAR(50)   | Name/ID of the radiologist                   |
+   | findings      | TEXT          | Diagnostic observations/comments             |
+   | report_date   | DATE          | Date/time when the report was finalized      |
+
+> **Note**: In a small setup, you might combine some tables, but splitting them clarifies responsibilities.
+
+---
+
+### Where Are CXR Images Stored?
+
+- **Local/Network Server**: The clinic has a small **file server/NAS** on-premises.  
+  - When a technologist finishes a CXR, the DICOM file is saved in a folder named by **exam_id** or some unique identifier.  
+  - The system automatically or manually updates the **image_path** field in the **exams** table, e.g. `/radiology_images/exam_101/CVC-0101.dcm`.  
+
+**Folder Structure Example**:  
+
+```
+/radiology_images/
+   ├── exam_100/
+   │    └── CVC-0100.dcm
+   ├── exam_101/
+   │    └── CVC-0101.dcm
+   └── ...
+```
+
+Alternatively, if resources allow, the clinic might use a **basic PACS** or a **cloud storage** service (e.g., Google Cloud Storage) and store only the URL in `image_path`.  
+
+---
+
+### Daily Clinic Workflow with SQL
+
+1. **Reception**  
+   - **Morning**: Mr. Adam arrives for a chest X-ray.  
+   - The receptionist opens a basic web interface connected to the **SQL database** and **inserts** a new record into `patients` (or finds an existing record if Adam is a returning patient).  
+   - The receptionist creates a new **exam** record in the `exams` table:
+     ```sql
+     INSERT INTO exams (patient_id, exam_date, reason_for_exam, referring_doctor, billing_status)
+     VALUES (123, '2025-02-25', 'Chronic cough', 'Dr. Nguyen', 'Not Paid');
+     ```
+
+2. **Technologist**  
+   - Acquires the CXR image (say `CVC-0105.dcm`).  
+   - Saves it in the local NAS folder: `/radiology_images/exam_105/CVC-0105.dcm`.  
+   - Updates `exams.image_path` with the file location:
+     ```sql
+     UPDATE exams
+     SET image_path = '/radiology_images/exam_105/CVC-0105.dcm'
+     WHERE exam_id = 105;
+     ```
+
+3. **Radiologist**  
+   - Opens a **custom interface** that queries the SQL database:
+     ```sql
+     SELECT e.exam_id, p.first_name, p.last_name, e.image_path
+     FROM exams e
+     JOIN patients p ON e.patient_id = p.patient_id
+     WHERE e.exam_id = 105;
+     ```
+   - Launches a DICOM viewer using the path `'/radiology_images/exam_105/CVC-0105.dcm'`.  
+   - Enters **findings** in the system, which writes to the `reports` table:
+     ```sql
+     INSERT INTO reports (exam_id, radiologist, findings, report_date)
+     VALUES (105, 'Dr. Patel', 'Mild infiltrates in the left upper lobe', '2025-02-25');
+     ```
+
+4. **Billing & Reporting**  
+   - After the exam, the receptionist collects payment and updates:
+     ```sql
+     UPDATE exams
+     SET billing_status = 'Paid'
+     WHERE exam_id = 105;
+     ```
+   - At the end of the month, the clinic can run **aggregated queries**:
+     ```sql
+     SELECT reason_for_exam, COUNT(*) AS num_exams
+     FROM exams
+     WHERE exam_date BETWEEN '2025-02-01' AND '2025-02-28'
+     GROUP BY reason_for_exam;
+     ```
+
+---
+
+### Benefits of SQL Over Spreadsheets
+
+1. **Reduced Data Redundancy**: Patient details exist in one table. Repeated visits are only new rows in `exams` referencing the same patient.  
+2. **Data Integrity**: Foreign keys ensure valid references (e.g., no exam is created without a valid patient_id).  
+3. **Concurrent Access**: Multiple staff can update the system without worrying about version conflicts that can occur in spreadsheets.  
+4. **More Advanced Queries**: SQL queries are more powerful for filtering, joining, and aggregating data.  
+5. **Security & Access Control**: The clinic can create user accounts with roles and permissions (e.g., only the radiologist can edit the findings, the receptionist can update billing, etc.).
+
+---
+
+### Summary: Scaled-Up Story
+
+- **Patient** arrives and is registered in the SQL database (rather than a spreadsheet).  
+- **Technologist** captures images and saves them in a local or network file system.  
+- **Radiologist** queries the database, locates the patient’s exam record, and loads the image for reading.  
+- **Billing** is updated in real-time, and financial or patient-volume reports can be easily generated through SQL queries.  
+
+**Next Steps** could include building a small **web-based UI** to make it user-friendly, or eventually integrating a **lightweight PACS** for a more sophisticated image management approach. As patient volumes continue to grow or the clinic adds more modalities, you might move toward a more robust data architecture (e.g., a data warehouse or a data lakehouse).
+
+---
+
+This scenario bridges the gap between **spreadsheets** and a **full-blown enterprise system**, allowing your growing radiology clinic to handle more patients and more data while maintaining data integrity, security, and efficient retrieval of imaging records.
+
