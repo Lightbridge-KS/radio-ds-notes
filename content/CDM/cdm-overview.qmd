@@ -1,0 +1,119 @@
+# CDM Overview
+
+Think of data standards in radiology as different languages that serve specific purposes. Just as you might use Thai for daily conversation, English for international communication, and Python for programming, each radiology standard has evolved to address particular needs in medical imaging and healthcare information exchange.
+
+## DICOM (Digital Imaging and Communications in Medicine)
+
+DICOM is the cornerstone of medical imaging - it's essentially the universal language that allows imaging equipment and software from different manufacturers to communicate. Imagine if every CT scanner manufacturer created their own proprietary format; sharing images between hospitals would be chaos. DICOM solved this by standardizing not just the image format, but also how images are stored, transmitted, and displayed.
+
+The standard encompasses three main components:
+
+1. **Information Objects** - These define what data gets stored (images, reports, structured reports)
+2. **Services** - These specify how data moves between systems (storage, query/retrieve, print)
+3. **Network Protocol** - This defines how systems talk to each other
+
+What makes DICOM particularly powerful is its comprehensive metadata structure. Each DICOM file contains not just the image pixels, but extensive information about the patient, study, equipment settings, and acquisition parameters. This rich metadata enables sophisticated image processing, analysis, and integration with other healthcare systems.
+
+## RadLex (Radiology Lexicon)
+
+While DICOM handles the technical aspects of imaging, RadLex addresses a different challenge: standardizing the language radiologists use to describe what they see. Developed by the Radiological Society of North America (RSNA), RadLex is essentially a comprehensive dictionary of radiology terms organized in a hierarchical structure.
+
+Consider how a radiologist might describe a lung nodule - they could say "small round opacity," "coin lesion," or "pulmonary nodule." Without standardization, this variability makes it difficult to:
+
+- Search for similar cases in databases
+- Conduct research across institutions
+- Train AI algorithms consistently
+- Ensure clear communication between providers
+
+RadLex provides a controlled vocabulary with over 46,000 terms covering anatomy, pathology, imaging observations, and radiological procedures. It's structured as an ontology, meaning terms have defined relationships to each other (e.g., "lung nodule" is a type of "pulmonary finding").
+
+## LOINC (Logical Observation Identifiers Names and Codes)
+
+LOINC takes a broader view, standardizing how we identify clinical observations and laboratory tests across all of medicine. In radiology, LOINC provides codes for imaging procedures and document types. Think of it as a universal catalog number system for medical tests and observations.
+
+For radiology, LOINC is particularly important for:
+
+- **Procedure coding** - Identifying what type of imaging study was performed
+- **Document classification** - Categorizing different types of radiology reports
+- **Integration with laboratory systems** - Enabling comprehensive patient views
+
+The strength of LOINC lies in its precision and universality. Each code uniquely identifies a specific test or observation, eliminating ambiguity when systems exchange information.
+
+## SNOMED CT (Systematized Nomenclature of Medicine Clinical Terms)
+
+SNOMED CT is the most comprehensive clinical terminology system available, covering all aspects of clinical care. Where RadLex focuses specifically on radiology, SNOMED CT encompasses the entire medical domain with over 350,000 concepts.
+
+In radiology contexts, SNOMED CT provides:
+
+- Detailed anatomical concepts with relationships
+- Clinical findings and disorders
+- Procedures and interventions
+- Linkages to other terminologies
+
+What makes SNOMED CT powerful is its semantic network - concepts are connected through relationships that computers can understand and reason with. For example, the system knows that "pneumonia" is an "infection" that "affects" the "lung" and can be "diagnosed by" "chest radiograph."
+
+## OMOP (Observational Medical Outcomes Partnership) Common Data Model
+
+OMOP CDM represents a different approach altogether. Rather than being a terminology or imaging standard, it's a data model designed to standardize how healthcare data is structured in databases. Think of it as a blueprint for organizing healthcare information that makes large-scale analytics possible.
+
+The OMOP model:
+
+- Transforms diverse healthcare data into a common format
+- Enables standardized analytics across institutions
+- Incorporates multiple vocabularies (including SNOMED, LOINC, and RadLex)
+- Focuses on observational research and real-world evidence
+
+## Comparing the Standards: Purpose and Strengths
+
+Let me break down how these standards complement each other:
+
+**DICOM** excels at:
+- Storing and transmitting imaging data
+- Preserving technical acquisition details
+- Ensuring image fidelity and display consistency
+- Enabling vendor-neutral archives
+
+**RadLex** strengths:
+- Standardizing radiological language
+- Improving report consistency
+- Facilitating radiology-specific research
+- Enhancing natural language processing in radiology
+
+**LOINC** provides:
+- Universal test identification
+- Interoperability between different healthcare systems
+- Standardized result reporting
+- Integration with billing and administrative systems
+
+**SNOMED CT** offers:
+- Comprehensive clinical coverage
+- Semantic relationships for reasoning
+- International adoption and translation
+- Integration with electronic health records
+
+**OMOP CDM** enables:
+- Large-scale observational research
+- Standardized analytics across institutions
+- Incorporation of multiple vocabularies
+- Real-world evidence generation
+
+## How They Work Together
+
+In practice, these standards often work in concert. For example:
+
+1. A chest CT scan is acquired and stored in **DICOM** format
+2. The procedure is coded using **LOINC** for billing and tracking
+3. The radiologist creates a report using **RadLex** terms for findings
+4. Clinical findings are mapped to **SNOMED CT** concepts for the EHR
+5. All this data might eventually be transformed into **OMOP** format for research
+
+The key insight is that each standard serves a specific purpose in the healthcare data ecosystem. DICOM handles the images themselves, RadLex and SNOMED provide the vocabulary to describe findings, LOINC identifies the procedures, and OMOP creates a framework for analyzing all this information at scale.
+
+For your work in radiology AI, understanding these standards is crucial because:
+
+- AI training data often needs standardized annotations (RadLex/SNOMED)
+- Models must integrate with clinical systems (DICOM/LOINC)
+- Research findings need to be reproducible across institutions (OMOP)
+- Deployment requires interoperability with existing infrastructure (all standards)
+
+Would you like me to dive deeper into any particular standard or discuss specific implementation challenges you might face in your AI unit?
