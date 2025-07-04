@@ -68,30 +68,35 @@ The OMOP model:
 Let me break down how these standards complement each other:
 
 **DICOM** excels at:
+
 - Storing and transmitting imaging data
 - Preserving technical acquisition details
 - Ensuring image fidelity and display consistency
 - Enabling vendor-neutral archives
 
 **RadLex** strengths:
+
 - Standardizing radiological language
 - Improving report consistency
 - Facilitating radiology-specific research
 - Enhancing natural language processing in radiology
 
 **LOINC** provides:
+
 - Universal test identification
 - Interoperability between different healthcare systems
 - Standardized result reporting
 - Integration with billing and administrative systems
 
 **SNOMED CT** offers:
+
 - Comprehensive clinical coverage
 - Semantic relationships for reasoning
 - International adoption and translation
 - Integration with electronic health records
 
 **OMOP CDM** enables:
+
 - Large-scale observational research
 - Standardized analytics across institutions
 - Incorporation of multiple vocabularies
