@@ -1,0 +1,136 @@
+# FHIR - Foundation
+
+## FHIR JSON Overview
+
+FHIR JSON representation is based on the JSON format described in STD 90 (RFC 8259) and follows a structured approach for representing healthcare data. In radiology data science, this standardization is crucial for interoperability between imaging systems, PACS, and analytics platforms.
+
+## Basic JSON Structure
+
+Every FHIR resource is a JSON object with a property `resourceType` which informs the parser which resource type this is:
+
+```json
+{
+  "resourceType": "Patient",
+  "id": "patient-123",
+  "name": [{
+    "use": "official",
+    "family": "Smith",
+    "given": ["John"]
+  }]
+}
+```
+
+## Key JSON Representation Rules
+
+### 1. Primitive Data Types
+FHIR elements with primitive datatypes are represented in two parts: a JSON property that contains the value, and optionally, an additional JSON property with _ prepended to the name of the element, which, if present, contains the value's id and/or extensions.
+
+Example with a date:
+```json
+{
+  "birthDate": "1972-11-30",
+  "_birthDate": {
+    "extension": [{
+      "url": "http://example.org/fhir/StructureDefinition/precision",
+      "valueString": "estimated"
+    }]
+  }
+}
+```
+
+### 2. Arrays for Repeating Elements
+An element that has a maximum cardinality of >1 may occur more than once in the instance. In JSON, this is done by using an array type.
+
+## Radiology-Specific Examples
+
+### Example 1: ImagingStudy Resource (Minimal)
+```json
+{
+  "resourceType": "ImagingStudy",
+  "id": "study-001",
+  "status": "available",
+  "subject": {
+    "reference": "Patient/patient-123"
+  },
+  "started": "2024-01-15T10:30:00Z",
+  "numberOfSeries": 3,
+  "numberOfInstances": 45,
+  "modality": [{
+    "system": "http://dicom.nema.org/resources/ontology/DCM",
+    "code": "CT",
+    "display": "Computed Tomography"
+  }]
+}
+```
+
+### Example 2: DiagnosticReport Resource (Radiology Report)
+```json
+{
+  "resourceType": "DiagnosticReport",
+  "id": "radiology-report-001",
+  "status": "final",
+  "category": [{
+    "coding": [{
+      "system": "http://terminology.hl7.org/CodeSystem/v2-0074",
+      "code": "RAD",
+      "display": "Radiology"
+    }]
+  }],
+  "code": {
+    "coding": [{
+      "system": "http://loinc.org",
+      "code": "36643-5",
+      "display": "CT chest"
+    }]
+  },
+  "subject": {
+    "reference": "Patient/patient-123"
+  },
+  "effectiveDateTime": "2024-01-15T10:30:00Z",
+  "conclusion": "No acute findings"
+}
+```
+
+### Example 3: Observation Resource (Imaging Measurements)
+```json
+{
+  "resourceType": "Observation",
+  "id": "lesion-measurement-001",
+  "status": "final",
+  "category": [{
+    "coding": [{
+      "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+      "code": "imaging",
+      "display": "Imaging"
+    }]
+  }],
+  "code": {
+    "coding": [{
+      "system": "http://snomed.info/sct",
+      "code": "410668003",
+      "display": "Length"
+    }]
+  },
+  "subject": {
+    "reference": "Patient/patient-123"
+  },
+  "valueQuantity": {
+    "value": 12.5,
+    "unit": "mm",
+    "system": "http://unitsofmeasure.org",
+    "code": "mm"
+  }
+}
+```
+
+## Important Considerations for Radiology Data Science
+
+1. **CodeableConcept Structure**: A CodeableConcept is represented in JSON with a "coding" array containing system-code pairs, which is essential for standardized radiology terminology (SNOMED CT, RadLex, LOINC).
+
+2. **Extensions**: Critical for radiology-specific data that may not be covered by base FHIR resources, such as imaging protocol parameters or AI model predictions.
+
+3. **References**: Used to link related resources (Patient → ImagingStudy → DiagnosticReport → Observations), maintaining data relationships crucial for comprehensive radiology workflows.
+
+4. **Precision Handling**: JavaScript natively supports only one numeric datatype, which can cause loss of precision for FHIR numbers, including trailing zeros after decimal points - important for accurate measurement data in radiology.
+
+This JSON structure enables efficient data exchange between radiology systems, supports machine learning pipelines with standardized data formats, and facilitates integration with clinical decision support systems in radiology workflows.

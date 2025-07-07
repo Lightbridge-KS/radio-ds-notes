@@ -1,0 +1,442 @@
+# HL7 & FHIR
+
+## HL7 Overview
+
+HL7 (Health Level Seven) refers to a set of international standards for the exchange of clinical and administrative data between healthcare systems. The "Level Seven" refers to the application layer in the OSI model.
+
+### Key HL7 Standards:
+
+**HL7 v2.x** - The traditional messaging standard using pipe-delimited format
+**HL7 v3** - XML-based standard (less widely adopted)
+**HL7 FHIR** - The modern RESTful API-based standard
+
+## FHIR (Fast Healthcare Interoperability Resources)
+
+FHIR is the latest standard from HL7, designed to be:
+
+- **Web-based**: Uses modern web technologies (REST, JSON, XML)
+- **Resource-oriented**: Data organized as modular resources
+- **Developer-friendly**: Easy to implement compared to older standards
+
+### Core FHIR Concepts:
+
+1. **Resources** - Basic building blocks (Patient, Observation, DiagnosticReport, etc.)
+2. **References** - Links between resources
+3. **Extensions** - Custom data elements
+4. **Profiles** - Constraints on resources for specific use cases
+
+### Radiology-Specific FHIR Resources
+
+For radiology data science, these resources are particularly important:
+
+- **ImagingStudy** - Represents a DICOM study
+- **DiagnosticReport** - Radiology reports
+- **Observation** - Findings and measurements
+- **ServiceRequest** - Imaging orders
+- **Patient** - Patient demographics
+- **Practitioner** - Radiologists and referring physicians
+
+### Practical Example
+
+Let me show you a simple radiology workflow in FHIR:## Key Points for Radiology Data Science
+
+```{python}
+import json
+from datetime import datetime
+
+# Example 1: Patient Resource
+patient = {
+    "resourceType": "Patient",
+    "id": "patient-001",
+    "identifier": [{
+        "system": "http://hospital.example.org/patients",
+        "value": "12345"
+    }],
+    "name": [{
+        "use": "official",
+        "family": "Smith",
+        "given": ["John", "A."]
+    }],
+    "gender": "male",
+    "birthDate": "1985-03-15"
+}
+
+# Example 2: ServiceRequest (Imaging Order)
+imaging_order = {
+    "resourceType": "ServiceRequest",
+    "id": "order-001",
+    "status": "active",
+    "intent": "order",
+    "code": {
+        "coding": [{
+            "system": "http://loinc.org",
+            "code": "36643-5",
+            "display": "Chest X-ray PA and lateral"
+        }]
+    },
+    "subject": {
+        "reference": "Patient/patient-001"
+    },
+    "authoredOn": "2024-01-15T09:00:00Z",
+    "requester": {
+        "reference": "Practitioner/dr-jones"
+    },
+    "reasonCode": [{
+        "text": "Persistent cough for 2 weeks"
+    }]
+}
+
+# Example 3: ImagingStudy Resource
+imaging_study = {
+    "resourceType": "ImagingStudy",
+    "id": "study-001",
+    "status": "available",
+    "subject": {
+        "reference": "Patient/patient-001"
+    },
+    "started": "2024-01-15T10:30:00Z",
+    "basedOn": [{
+        "reference": "ServiceRequest/order-001"
+    }],
+    "modality": [{
+        "system": "http://dicom.nema.org/resources/ontology/DCM",
+        "code": "CR",
+        "display": "Computed Radiography"
+    }],
+    "numberOfSeries": 1,
+    "numberOfInstances": 2,
+    "series": [{
+        "uid": "1.2.840.113619.2.55.3.123456.1",
+        "modality": {
+            "system": "http://dicom.nema.org/resources/ontology/DCM",
+            "code": "CR"
+        },
+        "numberOfInstances": 2,
+        "instance": [
+            {
+                "uid": "1.2.840.113619.2.55.3.123456.1.1",
+                "sopClass": {
+                    "system": "urn:ietf:rfc:3986",
+                    "code": "urn:oid:1.2.840.10008.5.1.4.1.1.1.1"
+                },
+                "title": "PA view"
+            },
+            {
+                "uid": "1.2.840.113619.2.55.3.123456.1.2",
+                "sopClass": {
+                    "system": "urn:ietf:rfc:3986",
+                    "code": "urn:oid:1.2.840.10008.5.1.4.1.1.1.1"
+                },
+                "title": "Lateral view"
+            }
+        ]
+    }]
+}
+
+# Example 4: DiagnosticReport with Observations
+diagnostic_report = {
+    "resourceType": "DiagnosticReport",
+    "id": "report-001",
+    "status": "final",
+    "code": {
+        "coding": [{
+            "system": "http://loinc.org",
+            "code": "36643-5",
+            "display": "Chest X-ray PA and lateral"
+        }]
+    },
+    "subject": {
+        "reference": "Patient/patient-001"
+    },
+    "issued": "2024-01-15T14:00:00Z",
+    "performer": [{
+        "reference": "Practitioner/radiologist-001"
+    }],
+    "imagingStudy": [{
+        "reference": "ImagingStudy/study-001"
+    }],
+    "conclusion": "No acute cardiopulmonary abnormality. Small left pleural effusion.",
+    "result": [
+        {
+            "reference": "Observation/obs-001"
+        },
+        {
+            "reference": "Observation/obs-002"
+        }
+    ]
+}
+
+# Example 5: Observation (Finding)
+observation_pleural_effusion = {
+    "resourceType": "Observation",
+    "id": "obs-001",
+    "status": "final",
+    "code": {
+        "coding": [{
+            "system": "http://snomed.info/sct",
+            "code": "60046008",
+            "display": "Pleural effusion"
+        }]
+    },
+    "subject": {
+        "reference": "Patient/patient-001"
+    },
+    "bodySite": {
+        "coding": [{
+            "system": "http://snomed.info/sct",
+            "code": "264231000",
+            "display": "Left lung"
+        }]
+    },
+    "valueCodeableConcept": {
+        "coding": [{
+            "system": "http://snomed.info/sct",
+            "code": "255507004",
+            "display": "Small"
+        }]
+    }
+}
+
+# Example 6: Observation (Measurement)
+observation_cardiothoracic_ratio = {
+    "resourceType": "Observation",
+    "id": "obs-002",
+    "status": "final",
+    "code": {
+        "coding": [{
+            "system": "http://loinc.org",
+            "code": "81269-2",
+            "display": "Cardiothoracic ratio"
+        }]
+    },
+    "subject": {
+        "reference": "Patient/patient-001"
+    },
+    "valueQuantity": {
+        "value": 0.45,
+        "unit": "ratio"
+    },
+    "referenceRange": [{
+        "high": {
+            "value": 0.5
+        },
+        "text": "Normal < 0.5"
+    }]
+}
+
+# Print examples in readable format
+print("=== FHIR Radiology Workflow Example ===\n")
+
+resources = [
+    ("1. Patient", patient),
+    ("2. Service Request (Order)", imaging_order),
+    ("3. Imaging Study", imaging_study),
+    ("4. Diagnostic Report", diagnostic_report),
+    ("5. Observation - Finding", observation_pleural_effusion),
+    ("6. Observation - Measurement", observation_cardiothoracic_ratio)
+]
+
+for title, resource in resources:
+    print(f"\n{title}:")
+    print(json.dumps(resource, indent=2))
+    print("-" * 50)
+
+```
+
+
+#### 1. **DICOM to FHIR Mapping**
+
+FHIR ImagingStudy maps to DICOM hierarchy:
+
+- ImagingStudy → DICOM Study
+- Series → DICOM Series
+- Instance → DICOM Instance (individual images)
+
+#### 2. **Common Terminologies**
+
+FHIR uses standard coding systems:
+
+- **LOINC** - For procedure codes
+- **SNOMED CT** - For anatomical sites, findings
+- **RadLex** - Radiology-specific terminology
+- **DICOM** - For modality codes
+
+#### 3. **RESTful Operations**
+
+Basic FHIR operations:
+
+```python
+# Create: POST /Patient
+# Read: GET /Patient/123
+# Update: PUT /Patient/123
+# Delete: DELETE /Patient/123
+# Search: GET /Patient?name=Smith
+```
+
+## Resource
+
+### What is a FHIR Resource?
+
+A **Resource** is the fundamental unit of data in FHIR. Think of it as a standardized "container" or "building block" that holds specific types of healthcare information. Each resource represents a single concept in healthcare - like a patient, a medication, a lab result, or a radiology report.
+
+**Key Characteristics of Resources:**
+
+1. **Self-contained** - Each resource can stand alone with its own meaning
+2. **Identifiable** - Has a unique ID and can be referenced by other resources
+3. **Standardized structure** - Consistent format across all FHIR implementations
+4. **RESTful** - Can be created, read, updated, deleted via web APIs
+
+**Simple Analogy**
+
+Think of FHIR resources like **LEGO blocks**:
+- Each block (resource) has a specific shape and purpose
+- You can connect blocks together to build complex structures
+- Every block follows the same connection system
+- You can use blocks individually or combine them
+
+### Basic Structure of Any Resource
+
+Every FHIR resource has these common elements:
+
+```json
+{
+    "resourceType": "TypeName",     // What kind of resource
+    "id": "unique-identifier",      // Unique ID
+    "meta": {...},                  // Metadata (version, last updated)
+    // Resource-specific content
+}
+```
+
+### Simple Example: Patient Resource
+
+Let me show you a minimal Patient resource:
+
+```{python}
+import json
+from datetime import datetime
+
+# Simplest possible Patient resource
+simple_patient = {
+    "resourceType": "Patient",
+    "id": "12345"
+}
+
+print("1. Minimal Patient Resource:")
+print(json.dumps(simple_patient, indent=2))
+print("\n" + "="*50 + "\n")
+
+# More realistic Patient resource
+realistic_patient = {
+    "resourceType": "Patient",
+    "id": "12345",
+    "active": True,
+    "name": [{
+        "family": "Yamamoto",
+        "given": ["Hiroshi"]
+    }],
+    "gender": "male",
+    "birthDate": "1980-05-15",
+    "address": [{
+        "line": ["123 Sukhumvit Road"],
+        "city": "Bangkok",
+        "country": "Thailand"
+    }]
+}
+
+print("2. Realistic Patient Resource:")
+print(json.dumps(realistic_patient, indent=2))
+print("\n" + "="*50 + "\n")
+
+# Example showing how resources reference each other
+# An Observation (lab result) that belongs to the patient above
+lab_result = {
+    "resourceType": "Observation",
+    "id": "lab-001",
+    "status": "final",
+    "code": {
+        "text": "Blood Glucose"
+    },
+    "subject": {
+        "reference": "Patient/12345",  # This links to our patient!
+        "display": "Hiroshi Yamamoto"
+    },
+    "valueQuantity": {
+        "value": 5.4,
+        "unit": "mmol/L"
+    },
+    "effectiveDateTime": "2024-01-20T08:30:00+07:00"
+}
+
+print("3. Observation Resource (linked to Patient):")
+print(json.dumps(lab_result, indent=2))
+print("\n" + "="*50 + "\n")
+
+# Radiology-specific example: A simple chest X-ray order
+xray_order = {
+    "resourceType": "ServiceRequest",
+    "id": "xray-order-001",
+    "status": "active",
+    "intent": "order",
+    "code": {
+        "text": "Chest X-ray PA view"
+    },
+    "subject": {
+        "reference": "Patient/12345"  # Same patient
+    },
+    "authoredOn": "2024-01-20T09:00:00+07:00",
+    "requester": {
+        "display": "Dr. Smith"
+    }
+}
+
+print("4. ServiceRequest Resource (X-ray order):")
+print(json.dumps(xray_order, indent=2))
+
+# Demonstrate the relationship
+print("\n" + "="*50 + "\n")
+print("RELATIONSHIPS:")
+print("- The Patient resource (id: 12345) represents Mr. Hiroshi Yamamoto")
+print("- The Observation references this patient via 'Patient/12345'")
+print("- The ServiceRequest also references the same patient")
+print("- This creates a connected graph of healthcare data!")
+```
+
+
+## Resource Types Most Relevant to Radiology
+
+Here are the main resources you'll work with in radiology:
+
+1. **Patient** - Who is being imaged
+2. **ServiceRequest** - The imaging order/request
+3. **ImagingStudy** - The actual DICOM study metadata
+4. **DiagnosticReport** - The radiology report
+5. **Observation** - Individual findings or measurements
+6. **Practitioner** - Radiologists, technicians, referring doctors
+
+### How Resources Connect
+
+Resources don't exist in isolation. They reference each other to form a complete picture:
+
+```
+Patient <-- ServiceRequest (order)
+   ^              |
+   |              v
+   |        ImagingStudy (images)
+   |              |
+   |              v
+   +------- DiagnosticReport (report)
+                  |
+                  v
+            Observation(s) (findings)
+```
+
+### Why This Matters for Radiology Data Science
+
+Using standardized resources helps you:
+
+1. **Extract consistent data** from different hospital systems
+2. **Build datasets** where a "patient" means the same thing everywhere
+3. **Link related information** (connect reports to images to findings)
+4. **Share AI results** in a standard format that any system can understand
+
+The beauty of FHIR resources is that whether you're at Siriraj Hospital, Ramathibodi, or any hospital worldwide, a "Patient" resource has the same structure, making data science and interoperability much easier!

@@ -17,6 +17,9 @@ book:
     - part: CDM
       chapters: 
         - "content/CDM/cdm-overview.qmd"
+        - "content/CDM/HL7-FHIR-overview.qmd"
+        - "content/CDM/FHIR-foundation.qmd"
+        - "content/CDM/FHIR-datatypes.qmd"
     - part: Files in Radiology
       chapters: 
         - "content/dicom.qmd"
