@@ -1,0 +1,254 @@
+# ConceptMap — Workflow
+
+Your understanding is mostly correct, but let me refine and clarify some important details about how FHIR ConceptMap translation actually works in practice.
+
+## **Your Understanding - Corrected and Refined**
+
+### **Step 1: User Input ✅ (Mostly Correct)**
+
+**What you said:** User inputs DICOM tag code (e.g., "CT") as source
+
+**Refinement:** More precisely, it's a **DICOM modality code** (not DICOM tag). DICOM tags are metadata fields like (0008,0060), while modality codes like "CT" are the actual values.
+
+### **Step 2: System Processing ⚠️ (Needs Clarification)**
+
+**What you said:** System uses ConceptMap to find CT code in SNOMED via `$translate` operation in a database
+
+**Refinement:** The process is more nuanced - let me break it down:
+
+```
+USER INPUT                FHIR SERVER              TERMINOLOGY SERVICE
+┌─────────────┐          ┌─────────────┐          ┌──────────────────┐
+│ POST        │          │ ConceptMap  │          │ • ConceptMap     │
+│ $translate  │─────────▶│ Resource    │─────────▶│   Storage        │
+│ - code: CT  │          │ Processor   │          │ • Translation    │
+│ - system    │          │             │          │   Engine         │
+│ - conceptmap│          │             │          │ • Code Systems   │
+└─────────────┘          └─────────────┘          └──────────────────┘
+```
+
+### **Step 3: Response ✅ (Correct)**
+**What you said:** Parameters resource yields SNOMED code back to user
+**Correct!** The response is indeed a Parameters resource with the translation results.
+
+## **Detailed Technical Flow**
+
+### **1. Complete Request Structure**
+
+```http
+POST [base]/ConceptMap/$translate
+Content-Type: application/fhir+json
+
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    {
+      "name": "url",
+      "valueUri": "http://example.com/ConceptMap/dicom-to-snomed"
+    },
+    {
+      "name": "system", 
+      "valueUri": "http://dicom.nema.org/resources/ontology/DCM"
+    },
+    {
+      "name": "code",
+      "valueCode": "CT"
+    },
+    {
+      "name": "target",
+      "valueUri": "http://snomed.info/sct"
+    }
+  ]
+}
+```
+
+### **2. System Processing (Refined)**
+
+The system doesn't just "find CT code in SNOMED" - here's what actually happens:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ FHIR TERMINOLOGY SERVER PROCESSING                         │
+├─────────────────────────────────────────────────────────────┤
+│ 1. Validate Request Parameters                              │
+│    ✓ ConceptMap exists?                                     │
+│    ✓ Source system matches?                                 │
+│    ✓ Code exists in source system?                         │
+│                                                             │
+│ 2. Load ConceptMap Resource                                 │
+│    • Parse groups and elements                              │
+│    • Find matching source code "CT"                        │
+│                                                             │
+│ 3. Execute Translation Logic                                │
+│    • Locate element with code="CT"                         │
+│    • Extract target mappings                               │
+│    • Apply relationship rules                              │
+│                                                             │
+│ 4. Validate Target Codes                                   │
+│    • Verify SNOMED codes exist                             │
+│    • Check code validity                                   │
+│                                                             │
+│ 5. Construct Response                                       │
+│    • Build Parameters resource                             │
+│    • Include all matches                                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### **3. Database/Storage Considerations**
+
+**You mentioned SQL Server or GraphDB - both are possible:**
+
+#### **SQL Server Approach:**
+
+```sql
+-- ConceptMap storage
+CREATE TABLE ConceptMaps (
+    id VARCHAR(50),
+    url VARCHAR(500),
+    version VARCHAR(50),
+    status VARCHAR(20)
+);
+
+CREATE TABLE ConceptMapGroups (
+    conceptmap_id VARCHAR(50),
+    source_system VARCHAR(500),
+    target_system VARCHAR(500)
+);
+
+CREATE TABLE ConceptMapElements (
+    group_id VARCHAR(50),
+    source_code VARCHAR(100),
+    source_display VARCHAR(500)
+);
+
+CREATE TABLE ConceptMapTargets (
+    element_id VARCHAR(50),
+    target_code VARCHAR(100), 
+    target_display VARCHAR(500),
+    relationship VARCHAR(50)
+);
+
+-- Translation query
+SELECT 
+    t.target_code,
+    t.target_display,
+    t.relationship
+FROM ConceptMapElements e
+JOIN ConceptMapTargets t ON e.id = t.element_id  
+JOIN ConceptMapGroups g ON e.group_id = g.id
+WHERE e.source_code = 'CT'
+  AND g.source_system = 'http://dicom.nema.org/resources/ontology/DCM'
+  AND g.target_system = 'http://snomed.info/sct';
+```
+
+#### **Graph Database Approach:**
+
+```cypher
+// Neo4j/GraphDB query
+MATCH (cm:ConceptMap {url: 'http://example.com/ConceptMap/dicom-to-snomed'})
+-[:HAS_GROUP]->(g:Group {source: 'http://dicom.nema.org/resources/ontology/DCM'})
+-[:HAS_ELEMENT]->(e:Element {code: 'CT'})
+-[:HAS_TARGET]->(t:Target)
+RETURN t.code, t.display, t.relationship
+```
+
+## **Complete End-to-End Example**
+
+### **Input Request:**
+
+```json
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    {
+      "name": "url",
+      "valueUri": "http://hospital.com/ConceptMap/dicom-to-snomed"
+    },
+    {
+      "name": "system",
+      "valueUri": "http://dicom.nema.org/resources/ontology/DCM"  
+    },
+    {
+      "name": "code",
+      "valueCode": "CT"
+    }
+  ]
+}
+```
+
+### **System Processing Logic:**
+
+```python
+# Pseudocode for translation processing
+def translate_concept(concept_map_url, source_system, source_code):
+    # 1. Load ConceptMap
+    concept_map = load_concept_map(concept_map_url)
+    
+    # 2. Find matching group
+    group = find_group(concept_map, source_system)
+    if not group:
+        return create_no_match_response()
+    
+    # 3. Find source element
+    element = find_element(group, source_code)
+    if not element:
+        return create_no_match_response()
+    
+    # 4. Extract target mappings
+    targets = element.get('target', [])
+    
+    # 5. Build response
+    matches = []
+    for target in targets:
+        matches.append({
+            'relationship': target['relationship'],
+            'concept': {
+                'system': group['target'],
+                'code': target['code'],
+                'display': target['display']
+            }
+        })
+    
+    return create_success_response(matches)
+```
+
+### **Output Response:**
+
+```json
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    {
+      "name": "result",
+      "valueBoolean": true
+    },
+    {
+      "name": "match",
+      "part": [
+        {
+          "name": "relationship",
+          "valueCode": "equivalent"
+        },
+        {
+          "name": "concept", 
+          "valueCoding": {
+            "system": "http://snomed.info/sct",
+            "code": "77477000",
+            "display": "Computerized axial tomography"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+## **Key Refinements to Your Understanding:**
+
+1. **Input specificity**: DICOM modality codes (not DICOM tags)
+2. **Processing complexity**: Multi-step validation and translation logic
+3. **Storage flexibility**: Can use SQL, NoSQL, Graph, or specialized terminology servers
+4. **Response structure**: Always Parameters resource, but can contain multiple matches
+5. **Error handling**: System must handle unmapped codes gracefully
+
+Your core understanding is solid - you've grasped the essential flow of ConceptMap translation in FHIR systems!

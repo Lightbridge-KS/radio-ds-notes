@@ -1,0 +1,261 @@
+# FHIR: ConceptMap
+
+**Concept map tutorial:** <https://fhir-drills.github.io/conceptmap.html>
+
+
+
+A ConceptMap defines a mapping from a set of concepts defined in a code system to one or more concepts defined in other code systems. In radiology data science, this resource is essential for translating between different terminology systems and ensuring semantic interoperability.
+
+## **Definition and Purpose**
+
+A statement of relationships from one set of concepts to one or more other concepts - either concepts in code systems, or data element/data element concepts, or classes in class models.
+
+**Key Characteristics:**
+- Mappings are one way - from the source to the target system
+- Mappings between code system concepts are only intended to be defined in the context of a particular business usage
+- Each mapping from a source concept to a target concept includes a relationship element describing the semantic correspondence between the two
+
+## **Core Structure**
+
+The ConceptMap has several key components:
+
+### **1. Metadata Elements**
+- `url`: Canonical identifier
+- `version`: Business version
+- `name`: Computer-friendly name
+- `title`: Human-friendly name
+- `status`: Publication status (draft | active | retired | unknown)
+- `description`: Natural language description
+
+### **2. Scope Definition**
+- `sourceScope[x]`: The source value set containing concepts to be mapped
+- `targetScope[x]`: The target value set providing context for mappings
+
+### **3. Group Structure**
+- `group`: Groups mappings by source and target systems
+- `source`: Source system (CodeSystem)
+- `target`: Target system (CodeSystem)
+
+### **4. Element Mappings**
+- `element`: Individual concept mappings
+- `code`: Source concept code
+- `target`: Target concept(s) with relationships
+
+## **Radiology-Specific Examples**
+
+### **Example 1: DICOM Modality to SNOMED CT Mapping**
+
+```json
+{
+  "resourceType": "ConceptMap",
+  "id": "dicom-modality-to-snomed",
+  "url": "http://radiology.hospital.com/fhir/ConceptMap/dicom-modality-to-snomed",
+  "version": "1.0.0",
+  "name": "DicomModalityToSnomedCT",
+  "title": "DICOM Modality to SNOMED CT Mapping",
+  "status": "active",
+  "description": "Mapping between DICOM modality codes and SNOMED CT procedure concepts",
+  
+  "sourceScopeCanonical": "http://dicom.nema.org/medical/dicom/current/output/chtml/part16/sect_CID_29.html",
+  "targetScopeCanonical": "http://snomed.info/sct",
+  
+  "group": [{
+    "source": "http://dicom.nema.org/resources/ontology/DCM",
+    "target": "http://snomed.info/sct",
+    "element": [
+      {
+        "code": "CT",
+        "display": "Computed Tomography",
+        "target": [{
+          "code": "77477000",
+          "display": "Computerized axial tomography",
+          "relationship": "equivalent"
+        }]
+      },
+      {
+        "code": "MR",
+        "display": "Magnetic Resonance",
+        "target": [{
+          "code": "113091000",
+          "display": "Magnetic resonance imaging",
+          "relationship": "equivalent"
+        }]
+      },
+      {
+        "code": "US",
+        "display": "Ultrasound",
+        "target": [{
+          "code": "16310003",
+          "display": "Diagnostic ultrasonography",
+          "relationship": "equivalent"
+        }]
+      }
+    ]
+  }]
+}
+```
+
+### **Example 2: RadLex to ICD-10 Body Part Mapping**
+
+```json
+{
+  "resourceType": "ConceptMap",
+  "id": "radlex-to-icd10-bodypart",
+  "url": "http://radiology.hospital.com/fhir/ConceptMap/radlex-to-icd10-bodypart",
+  "version": "2.0.0",
+  "name": "RadLexToICD10BodyPart",
+  "title": "RadLex Anatomy to ICD-10 Body Part Mapping",
+  "status": "active",
+  "description": "Mapping RadLex anatomical terms to ICD-10 body part codes for billing purposes",
+  
+  "useContext": [{
+    "code": {
+      "system": "http://terminology.hl7.org/CodeSystem/usage-context-type",
+      "code": "workflow"
+    },
+    "valueCodeableConcept": {
+      "coding": [{
+        "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+        "code": "BILLING",
+        "display": "Billing"
+      }]
+    }
+  }],
+  
+  "sourceScopeCanonical": "http://radlex.org",
+  "targetScopeCanonical": "http://hl7.org/fhir/sid/icd-10",
+  
+  "group": [{
+    "source": "http://radlex.org",
+    "target": "http://hl7.org/fhir/sid/icd-10",
+    "element": [
+      {
+        "code": "RID1301",
+        "display": "lung",
+        "target": [{
+          "code": "J98.4",
+          "display": "Other disorders of lung",
+          "relationship": "source-is-narrower-than-target",
+          "comment": "RadLex lung maps to broader ICD-10 category for billing"
+        }]
+      },
+      {
+        "code": "RID1240",
+        "display": "heart",
+        "target": [{
+          "code": "I25.9",
+          "display": "Chronic ischemic heart disease, unspecified",
+          "relationship": "source-is-narrower-than-target"
+        }]
+      }
+    ]
+  }]
+}
+```
+
+### **Example 3: LOINC to Local Lab Code Mapping with Dependencies**
+
+```json
+{
+  "resourceType": "ConceptMap",
+  "id": "loinc-to-local-imaging",
+  "url": "http://radiology.hospital.com/fhir/ConceptMap/loinc-to-local-imaging",
+  "version": "1.2.0",
+  "name": "LoincToLocalImagingProcedures",
+  "title": "LOINC to Local Imaging Procedure Mapping",
+  "status": "active",
+  "description": "Maps LOINC imaging procedure codes to local hospital procedure codes",
+  
+  "additionalAttribute": [{
+    "code": "contrast-agent",
+    "description": "Whether contrast agent is used",
+    "type": "boolean"
+  }],
+  
+  "sourceScopeCanonical": "http://loinc.org",
+  "targetScopeCanonical": "http://hospital.local/procedures",
+  
+  "group": [{
+    "source": "http://loinc.org",
+    "target": "http://hospital.local/procedures",
+    "element": [
+      {
+        "code": "36643-5",
+        "display": "CT chest",
+        "target": [
+          {
+            "code": "CT-CHEST-001",
+            "display": "CT Chest without contrast",
+            "relationship": "equivalent",
+            "dependsOn": [{
+              "attribute": "contrast-agent",
+              "valueBoolean": false
+            }]
+          },
+          {
+            "code": "CT-CHEST-002",
+            "display": "CT Chest with contrast",
+            "relationship": "equivalent",
+            "dependsOn": [{
+              "attribute": "contrast-agent",
+              "valueBoolean": true
+            }]
+          }
+        ]
+      }
+    ]
+  }]
+}
+```
+
+## **Relationship Types**
+
+The relationship element describes the semantic correspondence between source and target concepts:
+
+- **`equivalent`**: Concepts are exactly the same
+- **`source-is-narrower-than-target`**: Source concept is more specific
+- **`source-is-broader-than-target`**: Source concept is more general
+- **`related-to`**: Concepts are related but not equivalent
+- **`not-related-to`**: No valid mapping exists
+
+## **The $translate Operation**
+
+A key concept for the ConceptMap resource is the $translate operation. This operation is a formal definition of an API by which a terminology server can allow clients to ask for a translation to be done based on the content in the ConceptMap resource.
+
+### **Example $translate Request:**
+```http
+POST [base]/ConceptMap/$translate
+Content-Type: application/fhir+json
+
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    {
+      "name": "url",
+      "valueUri": "http://radiology.hospital.com/fhir/ConceptMap/dicom-modality-to-snomed"
+    },
+    {
+      "name": "system",
+      "valueUri": "http://dicom.nema.org/resources/ontology/DCM"
+    },
+    {
+      "name": "code",
+      "valueCode": "CT"
+    }
+  ]
+}
+```
+
+## **Radiology Data Science Applications**
+
+**1. **Terminology Harmonization**: Convert between DICOM, SNOMED CT, RadLex, and LOINC codes for consistent data analysis.
+
+**2. **Multi-institutional Studies**: Map local procedure codes to standardized terminologies for collaborative research.
+
+**3. **AI Model Training**: Ensure consistent labeling across different datasets using standardized mappings.
+
+**4. **Clinical Decision Support**: Translate imaging findings to standardized terminologies for rule-based systems.
+
+**5. **Billing Integration**: Map clinical terminologies to billing codes (ICD-10, CPT) for revenue cycle management.
+
+The ConceptMap resource enables semantic interoperability across radiology systems, supporting data integration, analytics, and standardized reporting essential for modern radiology data science workflows.

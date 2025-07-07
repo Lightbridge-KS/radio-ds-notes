@@ -1,0 +1,265 @@
+# Map One -> One/Many
+
+## **One-to-One Mapping Example**
+
+### **Scenario: Simple DICOM Modality to SNOMED CT**
+
+**Plain Text Diagram:**
+```
+SOURCE                    MAPPING                    TARGET
+┌─────────────┐          ┌─────────┐          ┌──────────────────┐
+│ DICOM DCM   │          │ 1 : 1   │          │ SNOMED CT        │
+├─────────────┤          │         │          ├──────────────────┤
+│ CT          │─────────▶│equivalent│─────────▶│ 77477000         │
+│ "Computed   │          │         │          │ "Computerized    │
+│ Tomography" │          │         │          │ axial tomography"│
+└─────────────┘          └─────────┘          └──────────────────┘
+```
+
+**JSON Example:**
+```json
+{
+  "resourceType": "ConceptMap",
+  "id": "one-to-one-example",
+  "url": "http://example.com/ConceptMap/one-to-one",
+  "name": "OneToOneMapping",
+  "title": "Simple One-to-One Modality Mapping",
+  "status": "active",
+  
+  "sourceScopeCanonical": "http://dicom.nema.org/resources/ontology/DCM",
+  "targetScopeCanonical": "http://snomed.info/sct",
+  
+  "group": [{
+    "source": "http://dicom.nema.org/resources/ontology/DCM",
+    "target": "http://snomed.info/sct",
+    "element": [
+      {
+        "code": "CT",
+        "display": "Computed Tomography",
+        "target": [{
+          "code": "77477000",
+          "display": "Computerized axial tomography",
+          "relationship": "equivalent"
+        }]
+      },
+      {
+        "code": "MR", 
+        "display": "Magnetic Resonance",
+        "target": [{
+          "code": "113091000",
+          "display": "Magnetic resonance imaging",
+          "relationship": "equivalent"
+        }]
+      }
+    ]
+  }]
+}
+```
+
+## **One-to-Many Mapping Example**
+
+### **Scenario: LOINC Study Type to Multiple ICD-10 Procedure Codes**
+
+**Plain Text Diagram:**
+```
+SOURCE                    MAPPING                    TARGET
+┌─────────────┐          ┌─────────┐          ┌──────────────────┐
+│ LOINC       │          │ 1 : N   │          │ ICD-10-PCS       │
+├─────────────┤          │         │          ├──────────────────┤
+│ 36643-5     │─────────▶│equivalent│─────────▶│ BW20Z0Z          │
+│ "CT chest"  │          │         │          │ "CT Chest        │
+│             │          │         │          │  w/o contrast"   │
+│             │          │         │          ├──────────────────┤
+│             │          │         │─────────▶│ BW20YZZ          │
+│             │          │         │          │ "CT Chest        │
+│             │          │         │          │  w/ contrast"    │
+│             │          │         │          ├──────────────────┤
+│             │          │         │─────────▶│ BW20YZ1          │
+│             │          │         │          │ "CT Chest        │
+│             │          │         │          │  w/ high osmolar │
+│             │          │         │          │  contrast"       │
+└─────────────┘          └─────────┘          └──────────────────┘
+```
+
+**JSON Example:**
+```json
+{
+  "resourceType": "ConceptMap",
+  "id": "one-to-many-example",
+  "url": "http://example.com/ConceptMap/one-to-many",
+  "name": "OneToManyMapping",
+  "title": "LOINC to Multiple ICD-10 Procedures",
+  "status": "active",
+  "description": "Maps single LOINC study types to multiple specific ICD-10 procedure codes",
+  
+  "sourceScopeCanonical": "http://loinc.org",
+  "targetScopeCanonical": "http://hl7.org/fhir/sid/icd-10-pcs",
+  
+  "group": [{
+    "source": "http://loinc.org",
+    "target": "http://hl7.org/fhir/sid/icd-10-pcs",
+    "element": [
+      {
+        "code": "36643-5",
+        "display": "CT chest",
+        "target": [
+          {
+            "code": "BW20Z0Z",
+            "display": "Computerized Tomography (CT Scan) of Chest without Contrast Material",
+            "relationship": "source-is-broader-than-target",
+            "comment": "Basic CT chest without contrast"
+          },
+          {
+            "code": "BW20YZZ", 
+            "display": "Computerized Tomography (CT Scan) of Chest with Low Osmolar Contrast Material",
+            "relationship": "source-is-broader-than-target",
+            "comment": "CT chest with standard contrast"
+          },
+          {
+            "code": "BW20YZ1",
+            "display": "Computerized Tomography (CT Scan) of Chest with High Osmolar Contrast Material", 
+            "relationship": "source-is-broader-than-target",
+            "comment": "CT chest with high osmolar contrast"
+          }
+        ]
+      }
+    ]
+  }]
+}
+```
+
+## **Visual Comparison Diagram**
+
+```
+ONE-TO-ONE MAPPING                    ONE-TO-MANY MAPPING
+═══════════════════                   ═══════════════════════
+
+Source: CT                            Source: 36643-5 "CT chest"
+   │                                     │
+   │ 1:1                                 │ 1:N  
+   ▼                                     ├─────────────────────┐
+Target: 77477000                         │                     │
+"Computerized axial tomography"          ▼                     ▼
+                                      BW20Z0Z              BW20YZZ
+                                   "CT w/o contrast"    "CT w/ contrast"
+SIMPLE & DIRECT                        │
+                                       ▼
+                                    BW20YZ1
+                                "CT w/ high osmolar"
+                                
+                                COMPLEX & SPECIFIC
+```
+
+## **Translation Results Comparison**
+
+### **One-to-One Translation Result:**
+```json
+// $translate operation result
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    {
+      "name": "result",
+      "valueBoolean": true
+    },
+    {
+      "name": "match",
+      "part": [
+        {
+          "name": "relationship", 
+          "valueCode": "equivalent"
+        },
+        {
+          "name": "concept",
+          "valueCoding": {
+            "system": "http://snomed.info/sct",
+            "code": "77477000",
+            "display": "Computerized axial tomography"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+### **One-to-Many Translation Result:**
+```json
+// $translate operation result - returns multiple matches
+{
+  "resourceType": "Parameters", 
+  "parameter": [
+    {
+      "name": "result",
+      "valueBoolean": true
+    },
+    {
+      "name": "match",
+      "part": [
+        {
+          "name": "relationship",
+          "valueCode": "source-is-broader-than-target"
+        },
+        {
+          "name": "concept",
+          "valueCoding": {
+            "system": "http://hl7.org/fhir/sid/icd-10-pcs",
+            "code": "BW20Z0Z", 
+            "display": "CT Scan of Chest without Contrast Material"
+          }
+        }
+      ]
+    },
+    {
+      "name": "match",
+      "part": [
+        {
+          "name": "relationship",
+          "valueCode": "source-is-broader-than-target"
+        },
+        {
+          "name": "concept",
+          "valueCoding": {
+            "system": "http://hl7.org/fhir/sid/icd-10-pcs",
+            "code": "BW20YZZ",
+            "display": "CT Scan of Chest with Low Osmolar Contrast"
+          }
+        }
+      ]
+    },
+    {
+      "name": "match", 
+      "part": [
+        {
+          "name": "relationship",
+          "valueCode": "source-is-broader-than-target"
+        },
+        {
+          "name": "concept",
+          "valueCoding": {
+            "system": "http://hl7.org/fhir/sid/icd-10-pcs",
+            "code": "BW20YZ1",
+            "display": "CT Scan of Chest with High Osmolar Contrast"
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+## **Use Case Scenarios**
+
+### **When to Use One-to-One:**
+- **Exact terminology equivalents** between systems
+- **Direct equipment mappings** (DICOM modality → SNOMED procedure)
+- **Simple data integration** projects
+- **High confidence mappings** with clear relationships
+
+### **When to Use One-to-Many:**
+- **Granular billing requirements** (one procedure → multiple billing codes)
+- **Context-dependent mappings** (general term → specific implementations)
+- **Comprehensive coverage** (ensure all possible targets are captured)
+- **Complex clinical workflows** requiring multiple output codes
+
+Both mapping types are essential for comprehensive terminology management in radiology data science, enabling flexible and accurate code translation across different healthcare systems and use cases.

@@ -20,6 +20,12 @@ book:
         - "content/CDM/HL7-FHIR-overview.qmd"
         - "content/CDM/FHIR-foundation.qmd"
         - "content/CDM/FHIR-datatypes.qmd"
+    - part: CDM — Map
+      chapters: 
+        - "content/CDM/ConceptMap/FHIR-ConceptMap.qmd"
+        - "content/CDM/ConceptMap/Map-DICOM-SNOMED.qmd"
+        - "content/CDM/ConceptMap/Map-one-many.qmd"
+        - "content/CDM/ConceptMap/Map-flow.qmd"
     - part: Files in Radiology
       chapters: 
         - "content/dicom.qmd"
