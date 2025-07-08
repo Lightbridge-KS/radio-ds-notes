@@ -30,6 +30,7 @@ book:
       chapters: 
         - "content/dicom.qmd"
         - "content/dicom-tags.qmd"
+        - "content/dicom-element-explain.qmd"
         - "content/pydicom.ipynb"
         - "content/pydicom-tags.ipynb"
         - "content/nifti.qmd"
