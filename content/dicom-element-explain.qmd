@@ -353,3 +353,189 @@ WHERE Content_Date > Acquisition_Date
 -- Find multi-day studies  
 WHERE Series_Date != Study_Date
 ```
+
+## Series Description (0008,103E)
+
+### 1) Brief explanation
+Human-readable description of the imaging series
+
+### 2) Explanation
+
+Series Description (0008,103E) is a **standard DICOM tag** defined in the official DICOM specification. However, you're observing something very common in clinical practice - the **content** of this field is highly institution-specific and vendor-specific, which might make it seem like a custom tag.
+
+Here's why it appears "unique" to your hospital:
+
+**Content Customization:**
+- Each hospital configures their own naming conventions
+- Different vendors have different default descriptions
+- Local protocols influence the descriptions used
+- Technologists can modify descriptions during acquisition
+
+**Thai Hospital Context:**
+- Your hospital likely uses Thai-English mixed descriptions
+- Local protocol names specific to your institution
+- Abbreviated forms that are meaningful to your staff
+- Department-specific conventions
+
+**Vendor Variations:**
+- Siemens might use "T1_MPR_TRA_4MM"
+- GE might use "AX T1 FLAIR"
+- Philips might use "T1W_TSE_TRA"
+- All referring to similar sequences but with different naming
+
+### 3) Example Values
+
+**Your hospital might have customized values like:**
+- `CXR_PA_ROUTINE` - Chest X-ray PA view routine
+- `CT_CHEST_CONTRAST_PORTAL` - CT chest with contrast, portal phase
+- `MR_BRAIN_T1_POST_GAD` - MR brain T1 post-gadolinium
+- `US_ABDOMEN_COMPLETE` - Complete abdominal ultrasound
+- `MAMMO_CC_RIGHT` - Mammography cranio-caudal right breast
+
+**Standard examples across institutions:**
+- `Axial T2 FLAIR`
+- `Localizer`
+- `CT Angiogram`
+- `DWI ADC`
+- `Post Contrast`
+
+## Why It Seems Hospital-Specific
+
+**Configuration Level:**
+```
+DICOM Standard Tag → Local Configuration → Your Unique Values
+    (0008,103E)           Protocol Names        "CT_CHEST_THAI_PROTOCOL"
+```
+
+**What makes it appear unique:**
+1. **Local naming conventions** - Your hospital's specific protocol names
+2. **Language mixing** - Thai-English combinations
+3. **Abbreviated forms** - Shortcuts meaningful only to your staff
+4. **Custom protocols** - Specialized sequences developed locally
+
+## For Your Data Model
+
+This tag is extremely valuable for:
+- **Protocol standardization** across your hospital
+- **Series categorization** for analytics
+- **Quality assurance** - ensuring correct protocols
+- **Automated workflow routing** based on series type
+- **Billing and coding** correlation
+
+**Consider creating mapping tables:**
+```sql
+-- Standardize your hospital's series descriptions
+CREATE TABLE series_description_mapping (
+  raw_description VARCHAR(255),
+  standardized_category VARCHAR(100),
+  body_part VARCHAR(50),
+  contrast_status VARCHAR(20),
+  sequence_type VARCHAR(50)
+);
+```
+
+So to answer your question: It's a standard DICOM tag, but your hospital has customized the **values** that go into it, making the content appear unique to your institution!
+
+
+
+## Number of Averages
+
+### 1) Brief explanation
+Number of signal acquisitions averaged to create the image
+
+### 2) Explanation
+
+The Number of Averages (0018,0083) indicates how many times the imaging system acquired and averaged the same signal to produce the final image. This is a fundamental acquisition parameter that directly impacts image quality, scan time, and signal-to-noise ratio (SNR).
+
+When multiple acquisitions are averaged:
+- **Signal increases linearly** with number of averages
+- **Noise increases by square root** of number of averages  
+- **Net result**: SNR improves by square root of number of averages
+- **Trade-off**: Scan time increases proportionally
+
+This parameter is particularly important in:
+
+**MRI imaging:**
+- High-resolution sequences where SNR is critical
+- Diffusion-weighted imaging (DWI)
+- Spectroscopy sequences
+- Small field-of-view imaging
+
+**CT imaging:**
+- Low-dose protocols where noise reduction is needed
+- High-resolution bone imaging
+- Cardiac imaging with motion challenges
+
+**Nuclear medicine:**
+- SPECT/PET where count statistics matter
+- Long acquisition protocols
+
+For your radiology data model, this tag helps with:
+- Quality assessment and optimization
+- Protocol standardization across equipment
+- Scan time prediction and scheduling
+- Dose optimization strategies
+- Research data analysis
+
+### 3) Example Values
+
+**Common MRI values:**
+
+- `1` - Single acquisition (most common, fastest)
+- `2` - Two averages (moderate SNR improvement)
+- `3` - Three averages (good SNR, longer scan)
+- `4` - Four averages (high SNR, significantly longer)
+- `8` - Eight averages (very high SNR, very long scan)
+
+**Clinical context examples:**
+
+**Brain MRI T1:**
+- `1` - Routine clinical imaging
+- `2` - High-resolution protocol
+
+**Diffusion-weighted imaging:**
+- `3-4` - Standard DWI protocol
+- `6-8` - High b-value or research protocol
+
+**MR Spectroscopy:**
+- `64-128` - Single voxel spectroscopy
+- `256-512` - Research-quality spectroscopy
+
+**CT examples:**
+- `1` - Standard CT (no averaging)
+- `2-3` - Low-dose protocols with averaging
+- `4-8` - Ultra-low-dose research protocols
+
+**Nuclear medicine:**
+- `1` - Standard acquisition
+- `16-64` - SPECT acquisitions per view
+
+## Clinical Implications for Your Data Model
+
+**Quality Control Analysis:**
+```python
+# Analyze SNR vs Number of Averages
+import pandas as pd
+
+# Your DICOM data analysis
+df['snr_theoretical'] = df['number_of_averages'].apply(lambda x: np.sqrt(x) if x > 0 else 1)
+df['scan_time_factor'] = df['number_of_averages']
+
+# Protocol optimization
+protocol_analysis = df.groupby(['series_description', 'number_of_averages']).agg({
+    'image_quality_score': 'mean',
+    'acquisition_duration': 'mean'
+})
+```
+
+**Protocol Standardization:**
+- Ensure consistent averaging across similar protocols
+- Optimize scan time vs image quality trade-offs
+- Standardize research vs clinical protocols
+
+**For Thai hospital context:**
+- Balance patient throughput with image quality requirements
+- Optimize protocols for specific clinical indications
+- Ensure consistency across multiple scanners
+
+This tag is essential for understanding the acquisition strategy and optimizing your imaging protocols!
