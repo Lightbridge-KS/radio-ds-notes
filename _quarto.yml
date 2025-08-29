@@ -26,6 +26,9 @@ book:
         - "content/CDM/ConceptMap/Map-DICOM-SNOMED.qmd"
         - "content/CDM/ConceptMap/Map-one-many.qmd"
         - "content/CDM/ConceptMap/Map-flow.qmd"
+    - part: MI-CDM
+      chapters: 
+        - "content/CDM/mi-cdm-01.qmd"
     - part: Files in Radiology
       chapters: 
         - "content/dicom.qmd"
