@@ -20,6 +20,9 @@ book:
         - "content/CDM/HL7-FHIR-overview.qmd"
         - "content/CDM/FHIR-foundation.qmd"
         - "content/CDM/FHIR-datatypes.qmd"
+    - part: OMOP 
+      chapters: 
+        - "content/CDM/cdm-omop-sql-explained.qmd"
     - part: CDM — Map
       chapters: 
         - "content/CDM/ConceptMap/FHIR-ConceptMap.qmd"
