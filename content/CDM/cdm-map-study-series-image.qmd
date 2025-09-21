@@ -1,0 +1,206 @@
+---
+title: "CDM map study, series, image"
+---
+
+## Which DICOM tags?
+
+::: {.callout-note appearance="default" collapse="false"}
+**Q:** Please recommend the appropriate DICOM tag that match each of these:
+
+* Slice-level or Image-level
+* Series-level
+* Study-level
+:::
+
+
+Here are the key DICOM tags for each hierarchical level:
+
+### **Study-level**
+
+```
+StudyInstanceUID (0020,000D) - PRIMARY IDENTIFIER
+├── StudyDate (0008,0020)
+├── StudyTime (0008,0030)
+├── StudyDescription (0008,1030)
+├── AccessionNumber (0008,0050)
+└── PatientID (0010,0020)
+```
+
+### **Series-level**
+
+```
+SeriesInstanceUID (0020,000E) - PRIMARY IDENTIFIER
+├── SeriesNumber (0020,0011)
+├── SeriesDescription (0008,103E)
+├── Modality (0008,0060)
+├── BodyPartExamined (0018,0015)
+└── SeriesDate (0008,0021)
+```
+
+### **Slice/Image-level**
+
+```
+SOPInstanceUID (0008,0018) - PRIMARY IDENTIFIER
+├── InstanceNumber (0020,0013)
+├── ImagePositionPatient (0020,0032)
+├── SliceLocation (0020,1041)
+└── SliceThickness (0018,0050)
+```
+
+### **DICOM Hierarchy Visualization**
+
+```
+Patient
+└── Study (StudyInstanceUID)
+    └── Series (SeriesInstanceUID)
+        ├── Image/Slice 1 (SOPInstanceUID)
+        ├── Image/Slice 2 (SOPInstanceUID)
+        └── Image/Slice N (SOPInstanceUID)
+```
+
+### **For Your OMOP CDM Mapping:**
+
+**Study-level mapping:**
+
+- `StudyInstanceUID` → Primary key for imaging studies
+- `AccessionNumber` → Links to RIS/hospital systems
+
+**Series-level mapping:**
+
+- `SeriesInstanceUID` → Groups related images
+- `Modality` → Maps to OMOP procedure concepts
+
+**Image-level mapping:**
+
+- `SOPInstanceUID` → Individual measurements/observations
+- `InstanceNumber` → Ordering/sequencing
+
+## Design
+
+::: {.callout-note appearance="default" collapse="false"}
+**Q:** Please help me design how these identifiers should flow into  OMOP CDM tables:
+
+* StudyInstanceUID
+* SeriesInstanceUID
+* SOPInstanceUID
+:::
+
+Here's a comprehensive design for mapping DICOM identifiers into OMOP CDM tables:
+
+### **Core OMOP Tables Mapping**
+
+#### **1. PROCEDURE_OCCURRENCE** (Study-level)
+
+```sql
+-- One row per imaging study
+procedure_occurrence_id    -- OMOP auto-generated
+person_id                 -- Patient identifier  
+procedure_concept_id      -- Maps to imaging procedure (e.g., "CT Head")
+procedure_date           -- From StudyDate
+procedure_source_value   -- StudyInstanceUID
+modifier_source_value    -- AccessionNumber
+```
+
+#### **2. MEASUREMENT** (Series & Image-level)
+
+```sql
+-- Multiple rows per study (one per series or per image)
+measurement_id           -- OMOP auto-generated
+person_id               -- Patient identifier
+measurement_concept_id  -- Maps to measurement type
+measurement_date        -- From SeriesDate or ContentDate
+value_as_number         -- Quantitative measurements (if any)
+measurement_source_value -- SeriesInstanceUID or SOPInstanceUID
+```
+
+### **Custom Extension Strategy**
+
+#### **3. DICOM_HIERARCHY** (Custom table)
+
+```sql
+CREATE TABLE dicom_hierarchy (
+    hierarchy_id             BIGINT PRIMARY KEY,
+    study_instance_uid       VARCHAR(200) NOT NULL,
+    series_instance_uid      VARCHAR(200),
+    sop_instance_uid         VARCHAR(200),
+    procedure_occurrence_id  BIGINT,  -- Links to OMOP
+    measurement_id           BIGINT,  -- Links to OMOP
+    hierarchy_level          VARCHAR(10), -- 'STUDY'/'SERIES'/'IMAGE'
+    file_path               VARCHAR(500),
+    created_date            DATE
+);
+```
+
+### **Mapping Flow Diagram**
+
+```
+DICOM Study (CT Brain)
+├── StudyInstanceUID: 1.2.3.4.5
+│   └── PROCEDURE_OCCURRENCE
+│       ├── procedure_source_value: "1.2.3.4.5"
+│       └── procedure_concept_id: [CT Head concept]
+│
+├── SeriesInstanceUID: 1.2.3.4.5.100
+│   └── MEASUREMENT (Series-level)
+│       ├── measurement_source_value: "1.2.3.4.5.100"
+│       └── measurement_concept_id: [Imaging series concept]
+│
+└── SOPInstanceUID: 1.2.3.4.5.100.001
+    └── MEASUREMENT (Image-level)
+        ├── measurement_source_value: "1.2.3.4.5.100.001"
+        └── measurement_concept_id: [CT slice concept]
+```
+
+### **Python Implementation Example**
+
+```python
+def map_dicom_to_omop(dicom_metadata):
+    """Map DICOM hierarchy to OMOP CDM tables"""
+    
+    # 1. Create study-level procedure
+    procedure_data = {
+        'person_id': dicom_metadata['patient_id'],
+        'procedure_concept_id': get_procedure_concept('CT_HEAD'),
+        'procedure_date': dicom_metadata['study_date'],
+        'procedure_source_value': dicom_metadata['study_instance_uid']
+    }
+    procedure_id = insert_procedure_occurrence(procedure_data)
+    
+    # 2. Create series-level measurements
+    for series in dicom_metadata['series']:
+        series_measurement = {
+            'person_id': dicom_metadata['patient_id'],
+            'measurement_concept_id': get_measurement_concept('IMAGING_SERIES'),
+            'measurement_date': series['series_date'],
+            'measurement_source_value': series['series_instance_uid']
+        }
+        series_measurement_id = insert_measurement(series_measurement)
+        
+        # 3. Create image-level measurements (if needed)
+        for image in series['images']:
+            image_measurement = {
+                'person_id': dicom_metadata['patient_id'],
+                'measurement_concept_id': get_measurement_concept('CT_SLICE'),
+                'measurement_date': image['content_date'],
+                'measurement_source_value': image['sop_instance_uid'],
+                'value_as_number': image.get('slice_thickness')
+            }
+            image_measurement_id = insert_measurement(image_measurement)
+            
+            # 4. Maintain hierarchy in custom table
+            insert_dicom_hierarchy({
+                'study_instance_uid': dicom_metadata['study_instance_uid'],
+                'series_instance_uid': series['series_instance_uid'],
+                'sop_instance_uid': image['sop_instance_uid'],
+                'procedure_occurrence_id': procedure_id,
+                'measurement_id': image_measurement_id,
+                'hierarchy_level': 'IMAGE'
+            })
+```
+
+**Key Design Decisions**
+
+1. **Study** → `PROCEDURE_OCCURRENCE` (represents the imaging exam)
+2. **Series** → `MEASUREMENT` (represents acquisition parameters)
+3. **Images** → `MEASUREMENT` (individual slices/observations)
+4. **Custom table** maintains DICOM hierarchy and file references

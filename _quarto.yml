@@ -29,6 +29,7 @@ book:
         - "content/CDM/ConceptMap/Map-DICOM-SNOMED.qmd"
         - "content/CDM/ConceptMap/Map-one-many.qmd"
         - "content/CDM/ConceptMap/Map-flow.qmd"
+        - "content/CDM/cdm-map-study-series-image.qmd"
     - part: MI-CDM
       chapters: 
         - "content/CDM/mi-cdm-01.qmd"
