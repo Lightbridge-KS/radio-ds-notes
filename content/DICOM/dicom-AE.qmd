@@ -1,0 +1,151 @@
+# DICOM — Application Entities
+
+## Application Entities in Network Communication
+
+In general network communication, **Application Entities (AEs)** are the end-points of communication at the application layer. They represent distinct software components or services that can communicate with each other over a network. Think of them as the "identities" that applications use when they need to exchange information.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Application Layer                        │
+│                                                              │
+│  ┌──────────────┐                      ┌──────────────┐    │
+│  │ Application  │◄────────────────────►│ Application  │    │
+│  │   Entity A   │   Network Protocol   │   Entity B   │    │
+│  └──────────────┘                      └──────────────┘    │
+│        │                                       │            │
+└────────┼───────────────────────────────────────┼────────────┘
+         │                                       │
+    ┌────▼────┐                            ┌────▼────┐
+    │ Lower   │                            │ Lower   │
+    │ Layers  │◄──────────────────────────►│ Layers  │
+    └─────────┘                            └─────────┘
+```
+
+Key characteristics of Application Entities:
+- **Unique Identity**: Each AE has a unique identifier in the network
+- **Protocol Understanding**: AEs understand and implement specific application protocols
+- **Service Provider/User**: Can act as either a service provider (server) or service user (client)
+- **Autonomous**: Can initiate, respond to, or refuse communication requests
+
+## Application Entities in DICOM Communication
+
+In DICOM (Digital Imaging and Communications in Medicine), Application Entities take on a very specific and crucial role. A **DICOM Application Entity** represents any software component that can send, receive, or process DICOM data.
+
+### DICOM AE Components
+
+Each DICOM AE is defined by three key identifiers:
+
+```
+┌─────────────────────────────────────────────┐
+│           DICOM Application Entity           │
+│                                              │
+│  ┌────────────────────────────────────────┐ │
+│  │ AE Title: "PACS_SERVER_01"             │ │
+│  │ (Max 16 characters, unique identifier) │ │
+│  └────────────────────────────────────────┘ │
+│                                              │
+│  ┌────────────────────────────────────────┐ │
+│  │ IP Address: 192.168.1.100              │ │
+│  └────────────────────────────────────────┘ │
+│                                              │
+│  ┌────────────────────────────────────────┐ │
+│  │ Port Number: 11112                     │ │
+│  │ (Common DICOM port: 104 or 11112)      │ │
+│  └────────────────────────────────────────┘ │
+└─────────────────────────────────────────────┘
+```
+
+### DICOM AE Roles and Services
+
+DICOM AEs can operate in different roles:
+
+1. **Service Class User (SCU)** - The client that requests services
+2. **Service Class Provider (SCP)** - The server that provides services
+
+```
+┌──────────────────┐         DICOM Protocol        ┌──────────────────┐
+│   Modality       │         Association           │   PACS Server    │
+│                  │◄─────────────────────────────►│                  │
+│  AE: "CT_SCAN_1" │                               │ AE: "PACS_MAIN"  │
+│  Role: SCU       │──────► C-STORE Request ──────►│  Role: SCP       │
+│  (Sends Images)  │◄────── C-STORE Response ◄─────│ (Stores Images)  │
+└──────────────────┘                               └──────────────────┘
+```
+
+### Common DICOM Services by AE Type
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     DICOM Service Classes                        │
+├───────────────────┬─────────────────────────────────────────────┤
+│ Service           │ Description                                 │
+├───────────────────┼─────────────────────────────────────────────┤
+│ C-STORE          │ Transfer and store DICOM images            │
+│ C-FIND           │ Query for patient/study/series info        │
+│ C-MOVE           │ Retrieve images from remote AE             │
+│ C-GET            │ Direct retrieval of images                 │
+│ C-ECHO           │ Verify connectivity (like ping)            │
+│ Worklist         │ Query scheduled procedures                 │
+│ Storage Commit   │ Confirm successful storage                 │
+└───────────────────┴─────────────────────────────────────────────┘
+```
+
+### DICOM Association Process
+
+When two DICOM AEs communicate, they establish an "Association":
+
+```
+     SCU (Client)                          SCP (Server)
+         │                                      │
+         │───────── A-ASSOCIATE Request ───────►│
+         │        (Propose capabilities)        │
+         │                                      │
+         │◄──────── A-ASSOCIATE Accept ─────────│
+         │         (Negotiate services)         │
+         │                                      │
+         │═══════ DICOM Services Active ════════│
+         │                                      │
+         │────────── C-STORE Request ──────────►│
+         │◄───────── C-STORE Response ──────────│
+         │                                      │
+         │────────── C-FIND Request ───────────►│
+         │◄───────── C-FIND Response ───────────│
+         │                                      │
+         │───────── A-RELEASE Request ─────────►│
+         │◄──────── A-RELEASE Response ─────────│
+         │                                      │
+```
+
+### Real-World DICOM AE Examples
+
+In your radiology environment, you likely encounter these AE types:
+
+1. **Modality AEs**: CT scanners, MRI machines, X-ray systems
+2. **PACS AEs**: Picture Archiving and Communication Systems
+3. **Workstation AEs**: Diagnostic viewing stations
+4. **RIS AEs**: Radiology Information Systems
+5. **AI/Processing AEs**: Image processing or AI analysis nodes
+
+```
+┌────────────┐     ┌────────────┐     ┌─────────────┐
+│ CT Scanner │────►│    PACS    │────►│ Workstation │
+│ AE: CT_01  │     │ AE: PACS_1 │     │ AE: WS_RAD1 │
+└────────────┘     └─────┬──────┘     └─────────────┘
+                         │
+                         ▼
+                   ┌─────────────┐
+                   │  AI Engine  │
+                   │ AE: AI_PROC │
+                   └─────────────┘
+```
+
+### Configuration Considerations
+
+For DICOM AEs in your hospital network:
+- **AE Titles** must be unique and often follow naming conventions (e.g., "RAMA_CT_01")
+- **Port configuration** requires firewall rules to allow DICOM traffic
+- **Security**: Modern DICOM supports TLS encryption between AEs
+- **Timeout settings**: Important for handling network latency
+- **Transfer syntax**: AEs negotiate compression and encoding methods
+
+Each AE maintains a configuration table of other AEs it can communicate with, containing their titles, IP addresses, and ports - this is often called the "DICOM node configuration" or "AE configuration table."

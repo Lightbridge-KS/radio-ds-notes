@@ -44,6 +44,9 @@ book:
         - "content/mrml-mrb.qmd"
         - "content/nrrd-intro.qmd"
         - "content/nrrd-pynrrd.ipynb"
+    - part: DICOM Communication
+      chapters: 
+        - "content/DICOM/dicom-AE.qmd"
     - part: Radiomics
       chapters:
         - "content/radiomics-wf.qmd"
