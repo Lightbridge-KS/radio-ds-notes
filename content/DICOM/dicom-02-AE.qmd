@@ -22,6 +22,7 @@ In general network communication, **Application Entities (AEs)** are the end-poi
 ```
 
 Key characteristics of Application Entities:
+
 - **Unique Identity**: Each AE has a unique identifier in the network
 - **Protocol Understanding**: AEs understand and implement specific application protocols
 - **Service Provider/User**: Can act as either a service provider (server) or service user (client)
@@ -142,6 +143,7 @@ In your radiology environment, you likely encounter these AE types:
 ### Configuration Considerations
 
 For DICOM AEs in your hospital network:
+
 - **AE Titles** must be unique and often follow naming conventions (e.g., "RAMA_CT_01")
 - **Port configuration** requires firewall rules to allow DICOM traffic
 - **Security**: Modern DICOM supports TLS encryption between AEs
