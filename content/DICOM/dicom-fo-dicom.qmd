@@ -1,0 +1,623 @@
+# `fo-dicom`
+
+I'll walk you through implementing DICOM operations using **fo-dicom** (Fellow Oak DICOM), which is one of the most popular and well-maintained DICOM libraries for .NET. These examples will give you practical, working code that you can use to build DICOM applications.
+
+## Setting Up fo-dicom
+
+First, install the NuGet package:
+```xml
+<PackageReference Include="fo-dicom" Version="5.1.2" />
+<PackageReference Include="fo-dicom.NetCore" Version="5.1.2" />
+```
+
+## C-ECHO: Connectivity Verification
+
+C-ECHO is the simplest operation - perfect for testing if your DICOM connection works:
+
+```csharp
+using FellowOakDicom.Network;
+using FellowOakDicom.Network.Client;
+
+public async Task<bool> PerformEchoAsync(string serverHost, int serverPort, 
+    string serverAeTitle, string clientAeTitle)
+{
+    try
+    {
+        var client = DicomClientFactory.Create(serverHost, serverPort, false, 
+            clientAeTitle, serverAeTitle);
+        
+        // Add C-ECHO request
+        var request = new DicomCEchoRequest();
+        
+        // Track the response
+        DicomCEchoResponse echoResponse = null;
+        request.OnResponseReceived += (req, response) =>
+        {
+            echoResponse = response;
+            Console.WriteLine($"C-ECHO Response Status: {response.Status}");
+        };
+        
+        await client.AddRequestAsync(request);
+        await client.SendAsync();
+        
+        return echoResponse?.Status == DicomStatus.Success;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"C-ECHO failed: {ex.Message}");
+        return false;
+    }
+}
+
+// Usage
+bool isAlive = await PerformEchoAsync("192.168.1.100", 104, 
+    "PACS_SERVER", "MY_WORKSTATION");
+```
+
+## C-STORE SCU: Sending Images
+
+Here's how to send DICOM files to a PACS server:
+
+```csharp
+using FellowOakDicom;
+using FellowOakDicom.Network;
+using FellowOakDicom.Network.Client;
+
+public async Task SendDicomFileAsync(string filePath, string serverHost, 
+    int serverPort, string serverAeTitle, string clientAeTitle)
+{
+    try
+    {
+        // Load the DICOM file
+        var file = await DicomFile.OpenAsync(filePath);
+        
+        // Create client
+        var client = DicomClientFactory.Create(serverHost, serverPort, false, 
+            clientAeTitle, serverAeTitle);
+        
+        // Create C-STORE request
+        var request = new DicomCStoreRequest(file);
+        
+        // Handle response
+        request.OnResponseReceived += (req, response) =>
+        {
+            if (response.Status == DicomStatus.Success)
+            {
+                Console.WriteLine($"Successfully stored: {file.Dataset.GetString(DicomTag.SOPInstanceUID)}");
+            }
+            else
+            {
+                Console.WriteLine($"Store failed with status: {response.Status}");
+            }
+        };
+        
+        await client.AddRequestAsync(request);
+        await client.SendAsync();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"C-STORE failed: {ex.Message}");
+    }
+}
+
+// Send multiple files in one association
+public async Task SendMultipleDicomFilesAsync(List<string> filePaths, 
+    string serverHost, int serverPort, string serverAeTitle, string clientAeTitle)
+{
+    var client = DicomClientFactory.Create(serverHost, serverPort, false, 
+        clientAeTitle, serverAeTitle);
+    
+    foreach (var filePath in filePaths)
+    {
+        var file = await DicomFile.OpenAsync(filePath);
+        var request = new DicomCStoreRequest(file)
+        {
+            OnResponseReceived = (req, response) =>
+            {
+                Console.WriteLine($"File {Path.GetFileName(filePath)}: {response.Status}");
+            }
+        };
+        
+        await client.AddRequestAsync(request);
+    }
+    
+    await client.SendAsync();
+}
+```
+
+## C-STORE SCP: Receiving Images
+
+Creating a DICOM server that can receive images:
+
+```csharp
+using FellowOakDicom.Network;
+using FellowOakDicom.Log;
+
+public class StorageProvider : DicomService, IDicomServiceProvider, IDicomCStoreProvider
+{
+    private static readonly DicomTransferSyntax[] AcceptedTransferSyntaxes = new[]
+    {
+        DicomTransferSyntax.ExplicitVRLittleEndian,
+        DicomTransferSyntax.ImplicitVRLittleEndian,
+        DicomTransferSyntax.JPEGLSLossless,
+        DicomTransferSyntax.JPEG2000Lossless,
+        DicomTransferSyntax.JPEGProcess14
+    };
+
+    public StorageProvider(INetworkStream stream, Encoding fallbackEncoding, 
+        ILogger logger, DicomServiceDependencies dependencies)
+        : base(stream, fallbackEncoding, logger, dependencies)
+    {
+    }
+
+    public async Task OnReceiveAssociationRequestAsync(DicomAssociation association)
+    {
+        // Accept all storage classes
+        foreach (var pc in association.PresentationContexts)
+        {
+            if (pc.AbstractSyntax.StorageCategory != DicomStorageCategory.None)
+            {
+                association.AcceptTransferSyntaxes(pc, AcceptedTransferSyntaxes);
+            }
+        }
+
+        await SendAssociationAcceptAsync(association);
+    }
+
+    public async Task<DicomCStoreResponse> OnCStoreRequestAsync(DicomCStoreRequest request)
+    {
+        try
+        {
+            // Save the file
+            var studyUid = request.Dataset.GetString(DicomTag.StudyInstanceUID);
+            var seriesUid = request.Dataset.GetString(DicomTag.SeriesInstanceUID);
+            var sopUid = request.Dataset.GetString(DicomTag.SOPInstanceUID);
+            
+            // Create directory structure
+            var path = Path.Combine("DicomStorage", studyUid, seriesUid);
+            Directory.CreateDirectory(path);
+            
+            var filePath = Path.Combine(path, $"{sopUid}.dcm");
+            await request.File.SaveAsync(filePath);
+            
+            Console.WriteLine($"Stored file: {filePath}");
+            
+            return new DicomCStoreResponse(request, DicomStatus.Success);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Store failed: {ex.Message}");
+            return new DicomCStoreResponse(request, DicomStatus.ProcessingFailure);
+        }
+    }
+
+    public async Task OnCStoreRequestExceptionAsync(string tempFileName, Exception e)
+    {
+        // Clean up temporary file
+        if (File.Exists(tempFileName))
+            File.Delete(tempFileName);
+    }
+}
+
+// Start the storage server
+public async Task StartStorageServerAsync(int port, string aeTitle)
+{
+    var server = DicomServerFactory.Create<StorageProvider>(port);
+    server.Options.LogDimseDatasets = false;
+    server.Options.LogDataPDUs = false;
+    
+    Console.WriteLine($"Storage SCP started on port {port} with AE Title: {aeTitle}");
+    
+    // Keep server running
+    await Task.Delay(Timeout.Infinite);
+}
+```
+
+## C-FIND: Querying Studies
+
+C-FIND lets you search for studies, series, or images:
+
+```csharp
+public async Task<List<DicomDataset>> FindStudiesAsync(
+    string patientId, DateTime? studyDate,
+    string serverHost, int serverPort, 
+    string serverAeTitle, string clientAeTitle)
+{
+    var client = DicomClientFactory.Create(serverHost, serverPort, false, 
+        clientAeTitle, serverAeTitle);
+    
+    var results = new List<DicomDataset>();
+    
+    // Create C-FIND request for STUDY level
+    var request = new DicomCFindRequest(DicomQueryRetrieveLevel.Study);
+    
+    // Add query parameters - these are the matching keys
+    request.Dataset.AddOrUpdate(DicomTag.PatientID, patientId ?? string.Empty);
+    request.Dataset.AddOrUpdate(DicomTag.PatientName, string.Empty);
+    
+    // Study level attributes
+    request.Dataset.AddOrUpdate(DicomTag.StudyInstanceUID, string.Empty);
+    request.Dataset.AddOrUpdate(DicomTag.StudyDescription, string.Empty);
+    request.Dataset.AddOrUpdate(DicomTag.StudyDate, 
+        studyDate?.ToString("yyyyMMdd") ?? string.Empty);
+    request.Dataset.AddOrUpdate(DicomTag.StudyTime, string.Empty);
+    request.Dataset.AddOrUpdate(DicomTag.AccessionNumber, string.Empty);
+    request.Dataset.AddOrUpdate(DicomTag.Modality, string.Empty);
+    request.Dataset.AddOrUpdate(DicomTag.NumberOfStudyRelatedInstances, string.Empty);
+    
+    // Handle responses
+    request.OnResponseReceived = (req, response) =>
+    {
+        if (response.Status == DicomStatus.Pending && response.HasDataset)
+        {
+            // Each pending response contains one match
+            results.Add(response.Dataset);
+            
+            Console.WriteLine($"Found study: " +
+                $"{response.Dataset.GetString(DicomTag.PatientName)} - " +
+                $"{response.Dataset.GetString(DicomTag.StudyDescription)} - " +
+                $"{response.Dataset.GetString(DicomTag.StudyDate)}");
+        }
+        else if (response.Status == DicomStatus.Success)
+        {
+            Console.WriteLine($"C-FIND completed. Found {results.Count} studies.");
+        }
+    };
+    
+    await client.AddRequestAsync(request);
+    await client.SendAsync();
+    
+    return results;
+}
+
+// More complex query with date range
+public async Task<List<DicomDataset>> FindStudiesWithDateRangeAsync(
+    string modality, DateTime startDate, DateTime endDate,
+    string serverHost, int serverPort, 
+    string serverAeTitle, string clientAeTitle)
+{
+    var client = DicomClientFactory.Create(serverHost, serverPort, false, 
+        clientAeTitle, serverAeTitle);
+    
+    var results = new List<DicomDataset>();
+    
+    var request = new DicomCFindRequest(DicomQueryRetrieveLevel.Study);
+    
+    // Query parameters
+    request.Dataset.AddOrUpdate(DicomTag.PatientName, string.Empty);
+    request.Dataset.AddOrUpdate(DicomTag.PatientID, string.Empty);
+    request.Dataset.AddOrUpdate(DicomTag.StudyInstanceUID, string.Empty);
+    
+    // Date range query (DICOM format: YYYYMMDD-YYYYMMDD)
+    var dateRange = $"{startDate:yyyyMMdd}-{endDate:yyyyMMdd}";
+    request.Dataset.AddOrUpdate(DicomTag.StudyDate, dateRange);
+    
+    // Modality (CT, MR, CR, etc.)
+    request.Dataset.AddOrUpdate(DicomTag.ModalitiesInStudy, modality ?? string.Empty);
+    
+    request.OnResponseReceived = (req, response) =>
+    {
+        if (response.Status == DicomStatus.Pending && response.HasDataset)
+        {
+            results.Add(response.Dataset);
+        }
+    };
+    
+    await client.AddRequestAsync(request);
+    await client.SendAsync();
+    
+    return results;
+}
+```
+
+## C-MOVE: Requesting Transfer to Another AE
+
+C-MOVE tells the server to send images to a destination (which could be yourself):
+
+```csharp
+public async Task MoveStudyAsync(
+    string studyInstanceUid, string destinationAe,
+    string serverHost, int serverPort,
+    string serverAeTitle, string clientAeTitle)
+{
+    var client = DicomClientFactory.Create(serverHost, serverPort, false, 
+        clientAeTitle, serverAeTitle);
+    
+    // Create C-MOVE request at STUDY level
+    var request = new DicomCMoveRequest(destinationAe, studyInstanceUid);
+    
+    int completed = 0;
+    int warnings = 0;
+    int failures = 0;
+    
+    request.OnResponseReceived = (req, response) =>
+    {
+        if (response.Status.State == DicomState.Pending)
+        {
+            Console.WriteLine($"Moving... Completed: {response.Completed}/" +
+                $"{response.Remaining + response.Completed}");
+        }
+        else if (response.Status.State == DicomState.Success)
+        {
+            Console.WriteLine($"C-MOVE completed successfully. " +
+                $"Completed: {response.Completed}, " +
+                $"Warnings: {response.Warnings}, " +
+                $"Failures: {response.Failures}");
+        }
+        else
+        {
+            Console.WriteLine($"C-MOVE failed with status: {response.Status}");
+        }
+        
+        completed = response.Completed ?? 0;
+        warnings = response.Warnings ?? 0;
+        failures = response.Failures ?? 0;
+    };
+    
+    await client.AddRequestAsync(request);
+    await client.SendAsync();
+}
+
+// Move at SERIES level
+public async Task MoveSeriesAsync(
+    string studyInstanceUid, string seriesInstanceUid, 
+    string destinationAe,
+    string serverHost, int serverPort,
+    string serverAeTitle, string clientAeTitle)
+{
+    var client = DicomClientFactory.Create(serverHost, serverPort, false, 
+        clientAeTitle, serverAeTitle);
+    
+    var request = new DicomCMoveRequest(destinationAe, studyInstanceUid, 
+        seriesInstanceUid);
+    
+    request.OnResponseReceived = (req, response) =>
+    {
+        Console.WriteLine($"Status: {response.Status}, " +
+            $"Completed: {response.Completed}/{response.Remaining + response.Completed}");
+    };
+    
+    await client.AddRequestAsync(request);
+    await client.SendAsync();
+}
+```
+
+## C-GET: Direct Retrieval
+
+C-GET retrieves images directly (if the server supports it):
+
+```csharp
+public async Task GetStudyAsync(
+    string studyInstanceUid,
+    string serverHost, int serverPort,
+    string serverAeTitle, string clientAeTitle)
+{
+    var client = DicomClientFactory.Create(serverHost, serverPort, false, 
+        clientAeTitle, serverAeTitle);
+    
+    var receivedFiles = new List<DicomDataset>();
+    
+    // Create C-GET request
+    var request = new DicomCGetRequest(studyInstanceUid);
+    
+    // Handle incoming C-STORE sub-operations
+    client.OnCStoreRequest += async (req) =>
+    {
+        try
+        {
+            receivedFiles.Add(req.Dataset);
+            
+            // Save the file
+            var sopUid = req.Dataset.GetString(DicomTag.SOPInstanceUID);
+            var filePath = Path.Combine("Downloads", $"{sopUid}.dcm");
+            await req.File.SaveAsync(filePath);
+            
+            Console.WriteLine($"Received and saved: {filePath}");
+            
+            return new DicomCStoreResponse(req, DicomStatus.Success);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to save: {ex.Message}");
+            return new DicomCStoreResponse(req, DicomStatus.ProcessingFailure);
+        }
+    };
+    
+    // Handle C-GET responses
+    request.OnResponseReceived = (req, response) =>
+    {
+        if (response.Status == DicomStatus.Pending)
+        {
+            Console.WriteLine($"C-GET Progress: {response.Completed}/" +
+                $"{response.Remaining + response.Completed}");
+        }
+        else if (response.Status == DicomStatus.Success)
+        {
+            Console.WriteLine($"C-GET completed. Received {receivedFiles.Count} files");
+        }
+        else
+        {
+            Console.WriteLine($"C-GET failed: {response.Status}");
+        }
+    };
+    
+    await client.AddRequestAsync(request);
+    await client.SendAsync();
+}
+```
+
+## Complete Working Example: Query and Retrieve Workflow
+
+Here's a practical example that combines operations:
+
+```csharp
+public class DicomWorkflowService
+{
+    private readonly string _serverHost;
+    private readonly int _serverPort;
+    private readonly string _serverAeTitle;
+    private readonly string _clientAeTitle;
+    
+    public DicomWorkflowService(string serverHost, int serverPort, 
+        string serverAeTitle, string clientAeTitle)
+    {
+        _serverHost = serverHost;
+        _serverPort = serverPort;
+        _serverAeTitle = serverAeTitle;
+        _clientAeTitle = clientAeTitle;
+    }
+    
+    public async Task<bool> TestConnectionAsync()
+    {
+        var client = DicomClientFactory.Create(_serverHost, _serverPort, false, 
+            _clientAeTitle, _serverAeTitle);
+        
+        var request = new DicomCEchoRequest();
+        bool success = false;
+        
+        request.OnResponseReceived += (req, response) =>
+        {
+            success = response.Status == DicomStatus.Success;
+        };
+        
+        await client.AddRequestAsync(request);
+        await client.SendAsync();
+        
+        return success;
+    }
+    
+    public async Task<List<StudyInfo>> QueryStudiesForPatientAsync(string patientId)
+    {
+        var studies = new List<StudyInfo>();
+        var client = DicomClientFactory.Create(_serverHost, _serverPort, false, 
+            _clientAeTitle, _serverAeTitle);
+        
+        var request = new DicomCFindRequest(DicomQueryRetrieveLevel.Study)
+        {
+            Dataset =
+            {
+                { DicomTag.PatientID, patientId },
+                { DicomTag.PatientName, string.Empty },
+                { DicomTag.StudyInstanceUID, string.Empty },
+                { DicomTag.StudyDate, string.Empty },
+                { DicomTag.StudyDescription, string.Empty },
+                { DicomTag.ModalitiesInStudy, string.Empty },
+                { DicomTag.NumberOfStudyRelatedSeries, string.Empty },
+                { DicomTag.NumberOfStudyRelatedInstances, string.Empty }
+            }
+        };
+        
+        request.OnResponseReceived = (req, response) =>
+        {
+            if (response.Status == DicomStatus.Pending && response.HasDataset)
+            {
+                studies.Add(new StudyInfo
+                {
+                    StudyInstanceUID = response.Dataset.GetString(DicomTag.StudyInstanceUID),
+                    PatientName = response.Dataset.GetString(DicomTag.PatientName),
+                    StudyDate = response.Dataset.GetString(DicomTag.StudyDate),
+                    StudyDescription = response.Dataset.GetString(DicomTag.StudyDescription),
+                    Modality = response.Dataset.GetString(DicomTag.ModalitiesInStudy),
+                    NumberOfImages = response.Dataset.GetString(DicomTag.NumberOfStudyRelatedInstances)
+                });
+            }
+        };
+        
+        await client.AddRequestAsync(request);
+        await client.SendAsync();
+        
+        return studies;
+    }
+    
+    public async Task RetrieveStudyAsync(string studyInstanceUid, string destinationPath)
+    {
+        // First, set up a storage SCP to receive the images
+        var storagePort = 11113;
+        var storageAeTitle = _clientAeTitle;
+        
+        // Start storage server in background
+        var storageTask = Task.Run(async () =>
+        {
+            await StartTemporaryStorageServerAsync(storagePort, destinationPath);
+        });
+        
+        // Give the server time to start
+        await Task.Delay(1000);
+        
+        // Now request the move
+        await MoveStudyAsync(studyInstanceUid, storageAeTitle);
+    }
+    
+    private async Task StartTemporaryStorageServerAsync(int port, string storagePath)
+    {
+        // Implementation of temporary storage server
+        // (Similar to the StorageProvider shown earlier)
+    }
+}
+
+public class StudyInfo
+{
+    public string StudyInstanceUID { get; set; }
+    public string PatientName { get; set; }
+    public string StudyDate { get; set; }
+    public string StudyDescription { get; set; }
+    public string Modality { get; set; }
+    public string NumberOfImages { get; set; }
+}
+```
+
+## Error Handling and Connection Options
+
+```csharp
+public class RobustDicomClient
+{
+    public async Task<T> ExecuteWithRetryAsync<T>(
+        Func<Task<T>> operation, 
+        int maxRetries = 3,
+        int delayMilliseconds = 1000)
+    {
+        for (int i = 0; i < maxRetries; i++)
+        {
+            try
+            {
+                return await operation();
+            }
+            catch (DicomAssociationRejectedException ex)
+            {
+                Console.WriteLine($"Association rejected: {ex.RejectReason}");
+                if (i == maxRetries - 1) throw;
+            }
+            catch (DicomNetworkException ex)
+            {
+                Console.WriteLine($"Network error: {ex.Message}");
+                if (i == maxRetries - 1) throw;
+            }
+            
+            await Task.Delay(delayMilliseconds * (i + 1));
+        }
+        
+        throw new Exception("Max retries exceeded");
+    }
+    
+    public IDicomClient CreateClientWithOptions(
+        string host, int port, string callingAe, string calledAe)
+    {
+        var client = DicomClientFactory.Create(host, port, false, callingAe, calledAe);
+        
+        // Set client options
+        client.AssociationTimeout = TimeSpan.FromSeconds(30);
+        client.AssociationLingerTimeout = TimeSpan.FromSeconds(1);
+        client.MaximumPDULength = 16384;
+        client.ClientOptions.AssociationRequestTimeoutInMs = 5000;
+        
+        // Add logging
+        client.Logger = new ConsoleLogger();
+        
+        return client;
+    }
+}
+```
+
+These examples should give you a solid foundation for implementing DICOM operations in C# using fo-dicom. The library handles most of the low-level DICOM protocol details, letting you focus on your application logic.
+
+Remember that in a hospital environment like Ramathibodi, you'll need to coordinate with your PACS administrators to get the proper AE Titles configured and network access established before these operations will work.
