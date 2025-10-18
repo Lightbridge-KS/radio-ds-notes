@@ -1,0 +1,205 @@
+# DICOM Network libraries
+
+::: {.callout-note appearance="minimal" collapse="false"}
+### DICOM libraries and protocols: Alternatives to fo-dicom across languages
+:::
+
+
+**Python's pynetdicom and JavaScript's dicom-dimse-native emerge as the only production-ready alternatives to fo-dicom for DIMSE protocol support, while Go lacks viable options and Rust shows promise but remains immature.** Meanwhile, DICOMweb represents a fundamental architectural shift that eliminates many DIMSE limitations but requires hybrid deployment strategies since imaging modalities remain DIMSE-dependent. For hospital radiology departments, the optimal path forward combines maintaining DIMSE for scanner-to-PACS communication while adopting DICOMweb for external access, cloud integration, and modern applications—a strategic duality that balances clinical stability with technological evolution.
+
+The landscape of DICOM networking libraries varies dramatically across programming ecosystems. Python has converged on a single, excellent solution, while JavaScript offers two viable approaches with different tradeoffs. Go's ecosystem is effectively abandoned, and Rust is rapidly developing but not yet mature for production healthcare environments. Understanding these realities is essential for technology decisions that will shape radiology infrastructure for years to come.
+
+## JavaScript and TypeScript: Two viable paths with distinct tradeoffs
+
+The JavaScript ecosystem presents **two actively maintained options** that represent fundamentally different implementation philosophies. This choice matters because it affects deployment complexity, performance characteristics, and long-term maintenance strategies.
+
+**dcmjs-dimse** represents the pure JavaScript approach, offering comprehensive DIMSE support including advanced normalized services (N-CREATE, N-ACTION, N-GET, N-SET) that neither alternative implements. Released just one month ago at version 0.3.0, it demonstrates active development with 79 GitHub stars and approximately 3,200 weekly npm downloads. The library provides full SCU and SCP capabilities across all primary DIMSE-C services (C-ECHO, C-FIND, C-STORE, C-MOVE, C-GET, C-CANCEL) plus extensive DIMSE-N support. Its pure JavaScript architecture requires no compilation or native dependencies, integrates seamlessly with the broader dcmjs ecosystem, and includes automatic transcoding between transfer syntaxes using dcmjs-codecs. Security features include TLS support and user identity negotiation. The event-driven, asynchronous design with Promise support aligns well with modern Node.js development patterns.
+
+However, dcmjs-dimse carries an important caveat: **the maintainers explicitly mark it as work-in-progress and not recommended for production or clinical use**. This creates a tension between its technical sophistication and its official readiness status. Pure JavaScript implementations may also encounter performance limitations when processing large datasets compared to native implementations, though this rarely presents practical problems for typical DICOM workloads. The relatively small community (79 stars, 10 dependent packages) means less battle-testing than mature alternatives, though commercial support from HeartLab (a cardiology imaging platform) suggests growing confidence.
+
+**dicom-dimse-native** takes the opposite architectural approach by wrapping DCMTK 3.6.8—the industry-standard C++ DICOM toolkit—in Node.js native bindings. This provides proven foundation and native performance characteristics that match C# fo-dicom implementations. Released in February 2023 at version 2.4.6, development activity has slowed but the library remains functional with 57 GitHub stars and production usage in dicomweb-proxy. It supports core DIMSE-C services (C-ECHO, C-FIND, C-STORE, C-MOVE, C-GET) for both SCU and SCP roles, includes SQLite database backend for SCP operations, handles multithreaded associations, and supports comprehensive compression formats (JPEG, JPEG-LS, RLE, JPEG 2000). Prebuilt binaries simplify deployment on major platforms.
+
+The native approach introduces deployment complexity that pure JavaScript avoids. **Building from source requires CMake and C++ compiler infrastructure**, which complicates containerization and cross-platform deployment. Native modules create platform-specific dependencies that can break during Node.js version upgrades or deployment to different architectures. The ~2-year gap since the last release raises questions about ongoing maintenance, though the underlying DCMTK library continues active development. Missing features include normalized DIMSE-N services and modality worklist support remains on the roadmap.
+
+For hospital radiology departments evaluating these options, **dicom-dimse-native represents the safer production choice** despite slower updates, while dcmjs-dimse offers cutting-edge features for organizations willing to accept work-in-progress status. The third option, the original OHIF dicom-dimse implementation, should be avoided—it has been superseded by dcmjs-dimse, which explicitly took networking code from the OHIF project.
+
+## Python: Unified excellence through pynetdicom
+
+The Python ecosystem presents a strikingly different picture: **pynetdicom is the only actively maintained, production-ready DICOM networking library**, representing a rare case of ecosystem convergence on a single excellent solution. This differs fundamentally from C# where fo-dicom competes with alternatives, and from JavaScript where developers choose between two viable approaches.
+
+Released at version 3.0.4 in August 2025, pynetdicom demonstrates exceptional development health with releases in May, June, July, and August 2025. Supporting Python 3.10 through 3.13, it maintains MIT license terms suitable for commercial healthcare use. Part of the official pydicom organization, it provides seamless integration with pydicom for DICOM file operations, creating a complete ecosystem where pynetdicom handles networking while pydicom manages datasets.
+
+The library implements **complete DIMSE-C and DIMSE-N services** including C-ECHO, C-STORE, C-FIND, C-GET, C-MOVE, C-CANCEL, N-EVENT-REPORT, N-GET, N-SET, N-ACTION, N-CREATE, and N-DELETE. This completeness extends to numerous service classes: verification, storage, query/retrieve (patient root, study root), basic worklist management, modality worklist, print management, storage commitment, unified procedure step, media creation management, and newer additions like inventory query/retrieve and storage management. Both SCU and SCP capabilities receive first-class support through an event-driven architecture with customizable handlers.
+
+Community adoption metrics indicate substantial real-world usage: approximately 15,000 weekly PyPI downloads, over 60,000 monthly downloads, 514-547 GitHub stars, and 40 contributors. PyPI classifies it as "popular"—more popular than 90% of packages. Healthcare institutions worldwide use pynetdicom in production environments, and academic publications reference it regularly. The comprehensive documentation includes tutorials, detailed user guides, complete API references, and working examples for all service classes. Built-in command-line applications (echoscp/echoscu, storescu/storescp, findscu, getscu, movescu, qrscp) provide ready-to-use tools for common operations.
+
+The pure Python implementation brings advantages and limitations. **Advantages include zero compilation requirements, universal platform compatibility, and straightforward deployment**. The permissive MIT license removes barriers for commercial use. Active development with regular updates ensures bug fixes and DICOM standard compliance (currently supporting DICOM 2024b). The event-driven architecture provides flexibility for custom workflow logic.
+
+Limitations stem primarily from Python's performance characteristics and architectural choices. The thread-based concurrency model rather than async/await patterns may limit performance in high-throughput scenarios, though GitHub discussions mention potential future migration to frameworks like Twisted. Python's Global Interpreter Lock affects concurrent operation performance. Pure Python implementations generally run slower than C/C++ implementations for computationally intensive operations, though this rarely constrains typical DICOM workflows.
+
+Compared to fo-dicom, pynetdicom offers more focused functionality—it handles networking exclusively while pydicom handles file operations, whereas fo-dicom provides an integrated solution. Both achieve production-ready maturity and reliability, but **pynetdicom's monopoly in the Python ecosystem means less competitive innovation while also ensuring unified community effort**. Performance likely favors fo-dicom due to C# runtime characteristics, but for most hospital workflows, Python's performance proves entirely adequate.
+
+Historical alternatives have been abandoned or merged. pydicom itself handles only file parsing with no networking capabilities. pynetdicom3 was merged back into pynetdicom as Python 3 support unified. The original legacy pynetdicom supporting Python 2.7 has been superseded. pynetdicom2 appears abandoned with no active maintenance.
+
+For Python developers implementing DICOM networking, **pynetdicom is the definitive choice with no meaningful alternatives**. This simplifies technology decisions but requires accepting the library's architectural choices and performance characteristics.
+
+## Go: An ecosystem effectively abandoned
+
+The Go programming language presents the most challenging landscape for DICOM DIMSE implementation: **no actively maintained, production-ready library exists as of October 2025**. This represents a critical gap for organizations preferring Go's performance characteristics, concurrency model, and deployment simplicity.
+
+The original **grailbio/go-netdicom** library, once the primary Go DICOM solution, has been officially archived by its maintainers. Last actively developed around 2017-2019, it accumulated 63 GitHub stars and 46 forks before abandonment. The maintainers explicitly direct users to suyashkumar/dicom—but that library provides only file parsing, not networking capabilities. This misdirection suggests the maintainers themselves lost touch with DICOM networking requirements.
+
+grailbio/go-netdicom implemented core DIMSE-C services for both SCU and SCP roles: C-ECHO, C-STORE, C-FIND, and C-GET fully supported. However, **C-MOVE was implemented only on the server side, not client side**—a significant limitation since many PACS query/retrieve workflows depend on C-MOVE client operations. Normalized DIMSE-N services (N-GET, N-SET, N-ACTION, N-CREATE, N-DELETE, N-EVENT-REPORT) were never implemented. The library provided PDU handling, association management, transfer syntax negotiation, and basic TLS support, tested against pynetdicom and OsiriX MD. Known limitations included thread-safety issues for concurrent operations on the same connection, incomplete TLS implementation, and lack of security updates.
+
+Community forks emerged attempting to address these limitations, creating a fragmented ecosystem with no clear successor. The most notable fork, **msz-kp/go-netdicom** (last updated July 2023), added crucial C-MOVE client-side support in May 2022 plus context support for callbacks, streaming data handling via CStoreStreamCallback, and connection lifecycle hooks (OnConnect/OnDisconnect). This fork provides the most complete DIMSE-C implementation available in Go, but sporadic maintenance and limited community adoption (fork-specific metrics unavailable) make production use risky.
+
+Other forks show minimal divergence: apaladiychuk/go-netdicom, azubkokshe/go-netdicom (tagged v1.0.2), and antibios/go-netdicom made minor API changes but lack active development. Forks by sean-TPE, BTsykaniuk, investigare, mlibanori, and iyinin show no significant improvements. **No fork has emerged as the community-blessed successor**, leaving Go developers without clear guidance on which implementation to choose.
+
+The actively maintained **suyashkumar/dicom** library (last updated August 2023, v1.0+, 45 importing projects) creates confusion because maintainers recommend it as the go-netdicom successor, but it explicitly does not support DIMSE networking. It excels at parsing and writing DICOM files with multi-frame support, streaming frame parsing, JSON serialization, high performance, and a command-line tool (dicomutil). However, it provides zero networking functionality—no C-STORE, C-FIND, C-MOVE, C-GET operations, no association management, no SCU/SCP capabilities. The README references networking support as a long-term goal rather than implemented feature, suggesting years before potential DIMSE capabilities emerge.
+
+Compared to fo-dicom's production-ready maturity, active maintenance, comprehensive documentation, and full DIMSE support including normalized services, **Go has no equivalent whatsoever**. Technical gaps include missing normalized DIMSE-N services, incomplete C-MOVE implementation (except msz-kp fork), limited SOP class support, no modality worklists, no print management, no storage commitment, no unified procedure step, no active maintenance, no security updates, and no production-grade documentation.
+
+For hospital radiology departments requiring Go, alternatives become necessary: implement a hybrid approach using Go for application logic while calling Python pynetdicom via subprocess/RPC; adopt DICOMweb (WADO-RS, STOW-RS, QIDO-RS) instead of DIMSE since RESTful protocols integrate naturally with Go; deploy a DIMSE proxy in another language that exposes APIs to Go services; or wrap DCMTK (C++) using CGo, though this introduces significant complexity. **The recommendation is stark: avoid Go for DIMSE networking if possible**, using Python pynetdicom or C# fo-dicom instead. If Go is absolutely required, use the msz-kp/go-netdicom fork with extensive testing, maintenance planning, and acceptance of risks. Plan to fork and maintain the code yourself since community support has evaporated.
+
+## Rust: Emerging with promise but immature
+
+The Rust ecosystem for DICOM networking occupies an interesting middle ground: **actively developing with genuine momentum but not yet mature enough for production healthcare environments**. This positions Rust as a forward-looking option for organizations willing to invest in emerging technology.
+
+**dicom-rs** (by Enet4) represents the clear leader in Rust DICOM implementation. The project demonstrates exceptional development health with commits from just 2 days ago, 2,609 total commits, 54 contributors, and 443+ GitHub stars. Starting in October 2016, it has matured into a comprehensive ecosystem with multiple sub-crates: dicom-core, dicom-dictionary-std, dicom-encoding, dicom-object, dicom-parser, dicom-pixeldata, dicom-transfer-syntax-registry, and crucially **dicom-ul** for upper layer protocol (DIMSE networking).
+
+The library implements DIMSE protocol through the dicom-ul crate, providing low-level PDU reading/writing and association APIs for establishing DICOM connections. Currently available **SCU (client) tools** include dicom-echoscu for verification, dicom-storescu for storage with automatic transcoding, and dicom-findscu for query/retrieve operations. **SCP (server) tools** include dicom-storescp for receiving images and dicom-scpproxy for logging and diagnostics. This covers C-ECHO, C-STORE (both directions), and C-FIND, with C-MOVE and C-GET showing limited or in-development status.
+
+Key architectural features include pure Rust implementation (no C dependencies), async/await support via Tokio introduced in v0.7.0, association API for connection management, PDU state machine for protocol compliance, user authentication (username/password, Kerberos, SAML, JWT), maximum PDU length negotiation, presentation context negotiation, and SCP/SCU role selection. The library achieves WebAssembly support enabling browser-based DICOM applications—a unique capability among the surveyed options. Extensive transfer syntax support includes JPEG variants, JPEG-LS, JPEG 2000, JPEG XL, and others. DICOM JSON serialization/deserialization provides modern data interchange.
+
+The project shows strong community health: 115,603+ all-time downloads on crates.io, well-documented with examples, active community on GitHub and Zulip, and a minimum supported Rust version (MSRV) of 1.72.0. Dual licensing (MIT OR Apache-2.0) permits commercial use.
+
+**Maturity assessment reveals production-readiness for some use cases but not comprehensive medical imaging systems**. Library crates handling file I/O and basic networking are production-ready, but networking tools remain primarily command-line utilities rather than mature programmatic APIs. High-level DIMSE abstractions remain under development as a roadmap item. Currently available SCU/SCP implementations work well as command-line tools but require lower-level programming for library integration. Building presentation context negotiation and command dataset construction requires working with low-level APIs. SCP implementations lag behind SCU maturity.
+
+The development roadmap explicitly plans creating standalone SCU/SCP crates with both CLI and programmatic APIs, higher-level abstractions for application entities, easier presentation context negotiation, more service class implementations (C-MOVE, C-GET, Print SCU), and IOD module APIs. This indicates the maintainers recognize current limitations and are actively addressing them.
+
+**medicom** (by neandrake/Christopher Speck) provides an alternative with explicit DIMSE support claims but significantly less maturity. Last updated 9 months ago with 938 all-time downloads (200 recent), it represents a solo developer project with limited community traction. The library explicitly advertises DIMSE support for C-ECHO, C-FIND, C-STORE, C-MOVE, and C-GET for both SCU and SCP roles, integrated into the core medicom library as an optional feature. It emphasizes streaming parser design for memory efficiency and minimal dependencies with an optional DICOM dictionary to reduce binary size.
+
+However, documentation and examples for DIMSE functionality remain sparse. No clear usage patterns or integration examples surface in available materials. Maturity sits at early/experimental stage with unclear production-readiness. The single maintainer creates sustainability risk, and very low adoption metrics (938 downloads total) suggest limited real-world validation. The project does demonstrate deep DICOM understanding from a developer who has worked with the standard for years, and the flexible design handles malformed DICOM datasets gracefully.
+
+Compared to fo-dicom, Rust alternatives offer compelling advantages in memory safety guarantees through Rust's ownership system, performance potential matching or exceeding C# implementations, modern async/await patterns (dicom-rs), and cross-platform compilation including WebAssembly targets. However, **fo-dicom maintains significant advantages in maturity, higher-level abstractions, extensive documentation and examples, production testing at scale, larger community, and comprehensive DIMSE service coverage**.
+
+For production DICOM networking in Rust, **dicom-rs represents the primary choice** with the most reliable maintenance, active community, and growing DIMSE support. medicom offers an experimental alternative if explicit C-MOVE/C-GET support advertised proves functional, but limited documentation makes verification difficult. Organizations committed to Rust can adopt dicom-rs for new projects while accepting current limitations and monitoring roadmap progress. However, **for mission-critical healthcare systems, fo-dicom or pynetdicom remain more prudent choices** until Rust implementations achieve greater maturity.
+
+## DICOMweb: Architectural transformation beyond DIMSE evolution
+
+DICOMweb represents not merely an updated version of DIMSE but a **fundamental reimagining of medical imaging communication using modern web architecture**. Formally defined in DICOM PS3.18 Web Services, it provides RESTful DICOM services designed for lightweight, mobile-friendly, browser-compatible access using familiar web technologies.
+
+### The three-protocol foundation
+
+**WADO-RS** (Web Access to DICOM Objects - RESTful Service) retrieves medical images and metadata through standard HTTP GET requests. Unlike legacy query/retrieve workflows requiring multiple round-trips, WADO-RS retrieves entire studies or series with single requests—a major efficiency improvement. It returns DICOM PS3.10 files, provides metadata in JSON or XML formats separately from pixel data, retrieves bulk data independently, delivers rendered consumer-format images (JPEG for web display), supports frame-level retrieval for multi-frame images, and handles both compressed and uncompressed data efficiently.
+
+**STOW-RS** (Store Over the Web - RESTful Service) stores DICOM objects to image archives via HTTP POST. Research demonstrates STOW-RS runs **approximately twice as efficient as C-STORE** when transferring multiple DICOM objects, primarily because it eliminates per-instance association overhead inherent in DIMSE. It uses multipart/related HTTP content type for bundling, enables storage of separated metadata and bulk data, and returns comprehensive storage status with references to stored objects.
+
+**QIDO-RS** (Query based on ID for DICOM Objects - RESTful Service) searches for studies, series, and instances using standard HTTP GET with query parameters. Functionally equivalent to C-FIND, it queries at study, series, or instance levels, searches by patient demographics and study attributes, returns metadata in JSON or XML rather than binary DICOM, supports fuzzy matching for patient names, enables pagination through limit and offset parameters, and uses familiar URL query syntax.
+
+### Technical architecture distinguishes DICOMweb fundamentally
+
+The underlying technology leverages **universal HTTP/HTTPS over standard ports 80/443**, RESTful API patterns familiar to millions of web developers, stateless request-response transactions rather than persistent connections, JSON and XML for metadata rather than binary encoding, multipart/related HTTP content type for efficient bundling, standard media types (image/jpeg, video/mpeg) for rendered content, TLS/HTTPS for encryption, OAuth 2.0 and bearer tokens for authentication, and CORS support for browser-based applications.
+
+Resource identification follows hierarchical REST conventions: `https://server/dicomweb/studies/{StudyInstanceUID}/series/{SeriesInstanceUID}/instances/{SOPInstanceUID}`. This structure enables intuitive navigation, standard HTTP caching mechanisms, CDN compatibility, and API gateway integration.
+
+### Comparing architectures reveals fundamental differences
+
+| Dimension | DIMSE (Legacy) | DICOMweb (Modern) |
+|-----------|----------------|-------------------|
+| Transport | Direct TCP/IP (Ports 104/11112) | HTTP/HTTPS (Ports 80/443) |
+| Architecture | Connection-oriented, stateful | Stateless, RESTful |
+| Firewall compatibility | Poor—requires special rules | Excellent—standard web ports |
+| NAT traversal | Difficult—requires configuration | Transparent—works automatically |
+| Browser access | Impossible—specialized clients only | Native—JavaScript can access directly |
+| Cloud compatibility | Limited—not cloud-native | Excellent—designed for cloud |
+| Implementation complexity | High—specialized DICOM knowledge | Lower—standard web development |
+| Connection setup | Complex negotiation, presentation contexts | Simple HTTP handshake |
+| Mobile support | Poor—requires custom protocols | Native—standard mobile HTTP stacks |
+
+DIMSE requires persistent connections with complex association negotiation and presentation context agreement for each communication session. Every instance transfer involves protocol overhead even when sending thousands of images to the same destination. Binary encoding couples tightly with transport mechanisms, making protocol-level debugging difficult without specialized tools.
+
+DICOMweb eliminates these constraints through stateless architecture—each request stands independently without connection management overhead. Bulk operations bundle multiple instances in single HTTP transactions dramatically reducing overhead. JSON and XML metadata decouples from binary pixel data enabling efficient partial retrieval. Standard web debugging tools (browser developer consoles, HTTP proxies) work immediately without DICOM-specific knowledge.
+
+### Advantages transform healthcare IT integration
+
+**Firewall friendliness** stands as perhaps the most immediate operational benefit. Standard ports 80/443 require no special firewall rules, pass through corporate firewalls without issues, work with Web Application Firewalls IT teams already understand, and eliminate port forwarding complexity that plagues DIMSE deployments. IT security teams approve DICOMweb deployments faster because they manage HTTP/HTTPS traffic daily.
+
+**Scalability** reaches new levels through stateless architecture enabling horizontal scaling with standard load balancers, no sticky session requirements complicating infrastructure, CDN compatibility for global distribution of frequently accessed studies, standard HTTP cache headers enabling multi-layer caching, and efficient resource utilization without persistent connection overhead.
+
+**Cloud compatibility** emerges as native rather than retrofitted—Azure Health Data Services, Google Cloud Healthcare API, and AWS partners all provide DICOMweb-native infrastructure. Serverless architectures become possible for image processing workflows, cloud storage services integrate directly without protocol translation, and microservices architectures benefit from RESTful service boundaries.
+
+**Developer accessibility** lowers barriers dramatically—RESTful patterns are taught in every web development curriculum, HTTP client libraries exist in every programming language, JSON/XML parsing requires no specialized DICOM knowledge, standard API documentation tools (OpenAPI/Swagger) work immediately, and debugging uses familiar browser developer tools rather than protocol analyzers.
+
+**Modern workflows** that were difficult or impossible with DIMSE become straightforward: zero-footprint browser-based diagnostic viewers require no local installation, mobile clinician access works through standard HTTPS, patient portals can display imaging studies directly in web interfaces, AI model deployment can pull training data via standard HTTP APIs, and telemedicine consultations can stream images through standard CDN infrastructure.
+
+### Limitations and transition challenges
+
+**Legacy device integration** presents the most significant obstacle—most imaging modalities (CT, MRI, ultrasound) still primarily use DIMSE with no DICOMweb capability. Scanners integrate tightly with DIMSE protocols developed over decades, retrofitting older equipment proves costly or impossible, and scanner vendors adopt new standards slowly given regulatory and safety constraints. This means **DIMSE remains essential for scanner-to-PACS communication** in the near and medium term.
+
+**Maturity gaps** exist compared to 30+ years of DIMSE evolution. DICOMweb formally standardized around 2015—less than a decade of production experience compared to DIMSE's 1993 origins. Some edge cases continue emerging through production deployment, fewer years of security testing and vulnerability patching exist, and complex workflow features (storage commitment, unified procedure step) show less maturity than DIMSE equivalents.
+
+**Vendor implementation variability** creates interoperability concerns—not all vendors implement all DICOMweb features, interpretation differences cause compatibility issues despite standards, some proprietary extensions still fragment the ecosystem, and implementation quality varies significantly across products. IHE Connectathon testing helps but doesn't guarantee real-world interoperability.
+
+**Infrastructure requirements** differ from DIMSE deployments—web server infrastructure must be provisioned and maintained, reverse proxies and load balancers add complexity for high availability, HTTPS certificate management becomes ongoing operational overhead, and proper security configuration requires web application security expertise.
+
+### Strategic deployment guidance for hospitals
+
+The optimal approach for hospital radiology departments combines **DIMSE for core acquisition workflows with DICOMweb for distribution and innovation**. Maintain DIMSE connections from imaging modalities to PACS since scanners will continue using DIMSE for years. Deploy DICOMweb for web-based viewer access where zero-footprint solutions improve workflow, cloud archive and disaster recovery where HTTP-native protocols simplify infrastructure, AI integration projects where RESTful APIs reduce complexity, patient and referring physician portals where browser compatibility is essential, remote access without VPN where HTTPS traverses firewalls easily, and research platforms where API-first architecture accelerates development.
+
+**Gateway and proxy solutions** bridge the protocols bidirectionally, translating C-STORE ↔ STOW-RS, C-FIND ↔ QIDO-RS, and C-GET/C-MOVE ↔ WADO-RS. Products like Dicom Systems Unifier, Orthanc with DICOMweb plugin, and cloud vendor adapters (Google DIMSE Adapter, Azure DICOM services) enable hybrid architectures. Modern PACS increasingly support both protocols natively with internal translation, allowing legacy modalities to use DIMSE while external systems consume DICOMweb.
+
+**Current adoption status** shows clear momentum toward DICOMweb for new implementations. Cloud PACS deployments are 90%+ DICOMweb-native. Modern web-based viewers predominantly support DICOMweb (50%+ of current viewer market). Major vendors including Agfa Healthcare, Sectra, GE Healthcare, Philips, and Siemens Healthineers provide DICOMweb conformance statements. AI vendors like Aidoc and Zebra Medical build on DICOMweb APIs. However, modalities remain 80-90% DIMSE-only, meaning hybrid architectures will persist for many years.
+
+**IHE profiles** provide implementation guidance: WIA (Web-based Image Access) defines DICOMweb for viewing workflows, WIC (Web-based Image Capture) specifies mobile device upload, AIR (AI Results) standardizes AI integration using DICOMweb, and MHD-I integrates document sharing with imaging. Regular IHE Connectathon testing demonstrates growing interoperability maturity with increasing vendor participation annually.
+
+### Integration with broader healthcare IT
+
+**HL7 FHIR integration** creates powerful synergies—ImagingStudy resources include DICOMweb endpoint references, OAuth 2.0 security aligns between standards, RESTful architecture principles match naturally, and shared authentication infrastructure simplifies security. Clinical systems can reference imaging studies through FHIR APIs that link to DICOMweb image retrieval, creating seamless electronic health record integration.
+
+**EHR and EMR systems** integrate more easily through RESTful APIs than DIMSE ever allowed, standard web authentication mechanisms work across systems, embeddable viewers can display imaging directly within EHR interfaces using simple iframe or component embedding, and reduced integration complexity accelerates deployment timelines.
+
+## Language ecosystem comparison and strategic recommendations
+
+Evaluating DIMSE library maturity across languages reveals striking differences in ecosystem health, community support, and production-readiness.
+
+| Language | Primary Library | Status | Production-Ready | DIMSE-C Complete | DIMSE-N Support | Community Size | Recommendation |
+|----------|----------------|--------|------------------|------------------|-----------------|----------------|----------------|
+| **Python** | pynetdicom | Excellent | ✅ Yes | ✅ Complete | ✅ Complete | Large (~15K weekly) | **Primary choice for new projects** |
+| **JavaScript** | dicom-dimse-native | Good | ✅ Yes | ✅ Complete | ❌ No | Medium | **Production-ready alternative** |
+| **JavaScript** | dcmjs-dimse | Excellent | ⚠️ WIP | ✅ Complete | ✅ Complete | Growing | **Future potential, not production** |
+| **C#** | fo-dicom (baseline) | Excellent | ✅ Yes | ✅ Complete | ✅ Complete | Large | **Industry standard reference** |
+| **Go** | msz-kp/go-netdicom (fork) | Poor | ❌ No | ⚠️ Mostly | ❌ No | Tiny | **Avoid if possible** |
+| **Rust** | dicom-rs | Good | ⚠️ Partial | ⚠️ Basic | ❌ No | Medium | **Emerging, monitor progress** |
+
+### For hospital radiology departments migrating from fo-dicom
+
+**Python with pynetdicom** emerges as the strongest alternative—mature, actively maintained, comprehensive DIMSE support, and large community. The event-driven architecture differs from C# async/await patterns but provides equivalent functionality. Separate libraries for networking (pynetdicom) versus file handling (pydicom) differs from fo-dicom's integrated approach but creates clean separation of concerns. Pure Python implementation may show performance differences from C# in extreme throughput scenarios, but typical hospital workloads rarely encounter these limits. Most importantly, **pynetdicom has been proven in production healthcare environments worldwide**.
+
+**JavaScript with dicom-dimse-native** provides production-ready networking with performance characteristics matching native implementations through DCMTK integration. Suitable for Node.js backend services, DICOM proxies, and middleware components. The native addon introduces deployment complexity but prebuilt binaries minimize friction on major platforms. Less frequent updates (last release February 2023) create mild concern but don't disqualify for production use given the stable DCMTK foundation.
+
+**Go requires strong justification** given the abandoned ecosystem. If organizational requirements mandate Go, implement hybrid architecture—use Python for DICOM networking exposed via RPC or REST API to Go application logic. Alternatively, pivot to DICOMweb entirely since RESTful protocols integrate naturally with Go's excellent HTTP libraries. Attempting to maintain a Go DIMSE implementation yourself diverts resources from clinical applications to infrastructure maintenance.
+
+**Rust shows promise for greenfield projects** in organizations committed to Rust's safety guarantees and willing to accept current limitations. dicom-rs development trajectory suggests reaching production maturity within 1-2 years. For new projects starting in 2025 with multi-year timelines, Rust represents a strategic bet on emerging technology. However, **immediate production deployments should use proven alternatives** until Rust implementations mature.
+
+### Strategic technology choices
+
+Organizations should base language selection on these prioritized factors:
+
+**Factor 1: Existing infrastructure and expertise** carries highest weight. Teams proficient in Python should use pynetdicom. Teams with JavaScript expertise and Node.js infrastructure should use dicom-dimse-native. Don't introduce new languages solely for DICOM networking unless other strategic drivers justify the change.
+
+**Factor 2: Integration requirements** shape architectural choices. Cloud-native architectures favor DICOMweb over DIMSE regardless of language. Hybrid environments require protocol translation regardless of implementation language. Legacy PACS integration depends primarily on DIMSE completeness rather than specific language.
+
+**Factor 3: Performance requirements** matter less than commonly assumed. Modern networks and hardware rarely make language performance the bottleneck in medical imaging workflows. Network latency, storage I/O, and image processing dominate performance profiles. **Choose languages based on developer productivity and ecosystem maturity, not theoretical performance maximums.**
+
+**Factor 4: Long-term maintenance** demands active communities. Python's large pynetdicom community ensures long-term viability. JavaScript's dual-option approach provides fallback if one library declines. Go's absent community represents unacceptable maintenance risk. Rust's growing community shows positive trajectory but requires monitoring.
+
+## Conclusion: Strategic duality in imaging infrastructure evolution
+
+The research reveals a critical insight for hospital radiology departments: **successful medical imaging infrastructure in 2025 requires embracing both legacy DIMSE and modern DICOMweb simultaneously rather than choosing between them**. This duality isn't compromise—it's strategic architecture recognizing that imaging modalities will use DIMSE for years while external systems, cloud services, AI integration, and patient access demand web-native protocols.
+
+For language alternatives to fo-dicom, Python's pynetdicom stands alone as a production-ready, actively maintained, feature-complete solution worthy of immediate adoption. JavaScript provides two paths—production-stable dicom-dimse-native for immediate deployment or cutting-edge dcmjs-dimse for organizations willing to invest in work-in-progress technology. Go represents a cautionary tale of ecosystem abandonment and should be avoided for DICOM networking. Rust shows genuine promise with dicom-rs but remains 1-2 years from production maturity for comprehensive medical imaging systems.
+
+The more profound architectural question transcends language choice: **when should organizations pivot from DIMSE to DICOMweb?** The answer is "both, strategically deployed." Maintain DIMSE for scanner-to-PACS communication where decades of proven reliability matter most. Deploy DICOMweb for everything else—web viewers, cloud archives, AI platforms, research systems, patient portals, and third-party integrations. Use gateways to bridge protocols during the multi-year transition period when both coexist.
+
+Organizations starting new imaging infrastructure projects in 2025 should architect for DICOMweb-first while maintaining DIMSE compatibility. Those evaluating language alternatives to fo-dicom should prioritize Python's proven pynetdicom unless JavaScript expertise or infrastructure provides compelling counter-justification. And critically, technology leaders must recognize that **the DIMSE-to-DICOMweb transition represents a decade-long evolution, not a sudden migration**—planning for hybrid architectures ensures clinical operations remain stable while innovation accelerates through modern protocols.

@@ -50,6 +50,7 @@ book:
         - "content/DICOM/dicom-02-AE.qmd"
         - "content/DICOM/dicom-fo-dicom.qmd"
         - "content/DICOM/dicom-pynetdicom.qmd"
+        - "content/DICOM/dicom-net-libray.qmd"
     - part: Radiomics
       chapters:
         - "content/radiomics-wf.qmd"
