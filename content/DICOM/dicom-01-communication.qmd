@@ -1,0 +1,146 @@
+# DICOM communication
+
+## The Foundation: DICOM Network Model
+
+DICOM communication is fundamentally different from typical web protocols like HTTP. Think of it as a specialized language that medical imaging devices use to have very specific conversations. The protocol operates over TCP/IP networks but adds its own application layer on top.
+
+The core concept revolves around two roles that any application can play: Service Class User (SCU) and Service Class Provider (SCP). An SCU requests services, while an SCP provides them. What's interesting is that the same application can act as both - your PACS server is an SCP when receiving images from a CT scanner, but becomes an SCU when sending images to a workstation.
+
+```
+┌─────────────┐                    ┌─────────────┐
+│             │   DICOM Request    │             │
+│     SCU     │ ─────────────────> │     SCP     │
+│  (Client)   │                    │  (Server)   │
+│             │ <───────────────── │             │
+└─────────────┘   DICOM Response   └─────────────┘
+```
+
+## The AE Title: DICOM's Identity System
+
+Before diving into operations, you need to understand Application Entity (AE) Titles. Every DICOM application has an AE Title - think of it as a unique name tag. Unlike web services that use URLs, DICOM uses these AE Titles combined with IP addresses and port numbers to identify endpoints.
+
+For example, your PACS server might have an AE Title like "RAMA_PACS_01", while a workstation might be "WS_RAD_03". These titles are typically configured in each system and must match exactly - DICOM is very strict about this.
+
+## The Handshake: DICOM Association
+
+Before any data transfer happens, applications must establish what's called an "Association" - essentially a formal agreement about what they're going to do. This process is more elaborate than a simple TCP connection:
+
+```
+     Workstation (SCU)                    PACS Server (SCP)
+            │                                     │
+            │  1. A-ASSOCIATE Request            │
+            │  (I want to connect, here's what   │
+            │   I can do and what I need)        │
+            │ ─────────────────────────────────> │
+            │                                     │
+            │  2. A-ASSOCIATE Response          │
+            │  (OK, here's what we agree on)    │
+            │ <───────────────────────────────── │
+            │                                     │
+            │  3. Data Transfer Operations       │
+            │ <─────────────────────────────────> │
+            │                                     │
+            │  4. A-RELEASE                     │
+            │  (We're done, closing connection) │
+            │ ─────────────────────────────────> │
+```
+
+During the association negotiation, both sides agree on several critical parameters. They negotiate which "Abstract Syntax" they'll use (essentially which types of DICOM objects they'll exchange - CT images, MR images, structured reports) and which "Transfer Syntax" (how the data will be encoded - compressed, uncompressed, byte order).
+
+## Core DICOM Operations
+
+Now let's explore the main operations, which DICOM calls "DIMSE Services":
+
+### C-ECHO: The Heartbeat Check
+
+C-ECHO is the simplest operation - it's like a "ping" to verify connectivity. When troubleshooting DICOM connections, this is always your first test:
+
+```
+Workstation: "Are you there?" (C-ECHO Request)
+PACS:        "Yes, I'm here"   (C-ECHO Response with Status: Success)
+```
+
+### C-STORE: Sending Images
+
+C-STORE is how images move from one system to another. The sender (SCU) pushes data to the receiver (SCP):
+
+```
+CT Scanner (SCU)                    PACS (SCP)
+       │                                │
+       │  C-STORE Request               │
+       │  + DICOM Image Data            │
+       │ ────────────────────────────> │
+       │                                │ Stores image
+       │  C-STORE Response              │ to database
+       │  Status: Success (0x0000)     │
+       │ <──────────────────────────── │
+```
+
+### C-FIND: Querying for Studies
+
+C-FIND lets you search for studies without retrieving them. It's like running a database query. You send search criteria and get back matching results:
+
+```
+Workstation: "Show me all chest CTs for patient ID 12345 from last week"
+             (C-FIND Request with search filters)
+
+PACS:        "Found 3 studies: [Study1 info], [Study2 info], [Study3 info]"
+             (C-FIND Responses - one per match, then final response)
+```
+
+The query uses specific DICOM tags as filters. For instance, you might search by Patient ID (0010,0020), Study Date (0008,0020), or Modality (0008,0060).
+
+### C-MOVE: The Indirect Transfer
+
+C-MOVE is perhaps the most misunderstood operation. Despite its name, it doesn't move data directly back to the requester. Instead, it tells the SCP to send data to a third destination (which could be the requester itself):
+
+```
+    Workstation                 PACS                  Destination
+         │                        │                        │
+         │  C-MOVE Request        │                        │
+         │  "Send Study X to      │                        │
+         │   AE Title: DEST_AE"   │                        │
+         │ ────────────────────> │                        │
+         │                        │                        │
+         │  C-MOVE Response       │  New Association      │
+         │  (Status updates)      │ ────────────────────> │
+         │ <──────────────────── │                        │
+         │                        │  C-STORE Request(s)   │
+         │                        │  + Image Data         │
+         │                        │ ────────────────────> │
+         │                        │                        │
+```
+
+This architecture means the PACS must know how to reach DEST_AE (its IP, port, and AE Title must be pre-configured). This is why C-MOVE often fails in practice - it requires proper configuration on both sides.
+
+### C-GET: The Direct Transfer
+
+C-GET is simpler than C-MOVE - the SCP sends data directly back over the same association:
+
+```
+Workstation (SCU)                    PACS (SCP)
+       │                                │
+       │  C-GET Request                 │
+       │  "Send me Study X"             │
+       │ ────────────────────────────> │
+       │                                │
+       │  C-STORE Indication(s)         │
+       │  + Image Data                  │
+       │ <──────────────────────────── │
+```
+
+However, many PACS systems don't support C-GET for security reasons, making C-MOVE more common despite its complexity.
+
+## Practical Implementation Flow
+
+Let me walk you through what happens when a radiologist opens a study on a PACS workstation:
+
+First, the workstation establishes an association with the PACS server, negotiating capabilities. Then it performs a C-FIND to search for the patient's studies, displaying the results in a worklist. When the radiologist selects a study, the workstation initiates either a C-MOVE or C-GET to retrieve the images. The PACS begins sending images via C-STORE operations (either back to the workstation or through a separate connection in the case of C-MOVE). Finally, once all images are transferred, the association is released.
+
+## Port and Network Considerations
+
+DICOM typically uses port 104, though many installations use custom ports like 11112. Unlike HTTP which is stateless, DICOM associations are stateful - they maintain a connection for the duration of the transaction. This means firewalls and network timeouts can cause issues with long transfers.
+
+The binary nature of DICOM data and the potential size of medical images (a single CT study can be several gigabytes) means network bandwidth and stability are crucial. This is why many hospitals implement dedicated imaging networks separate from their general IT infrastructure.
+
+Understanding these fundamentals will help you troubleshoot connection issues, design custom DICOM applications, and better comprehend how your hospital's imaging infrastructure operates. Would you like me to elaborate on any particular aspect, such as the specific DICOM message formats or how to implement these operations programmatically in Python?

@@ -46,7 +46,8 @@ book:
         - "content/nrrd-pynrrd.ipynb"
     - part: DICOM Communication
       chapters: 
-        - "content/DICOM/dicom-AE.qmd"
+        - "content/DICOM/dicom-01-communication.qmd"
+        - "content/DICOM/dicom-02-AE.qmd"
     - part: Radiomics
       chapters:
         - "content/radiomics-wf.qmd"
