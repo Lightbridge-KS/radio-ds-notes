@@ -71,6 +71,9 @@ book:
     - part: "Idea"
       chapters: 
         - "idea/report-search.qmd"
+    - part: "Education"
+      chapters: 
+        - "content/Edu/deepresearch_ai-in-radiology-education.qmd"
     - references.qmd
 
 
