@@ -1,0 +1,77 @@
+---
+title: "Python Libraries for Radiology Image Format Conversion"
+---
+
+There are several excellent Python libraries for this. Here's an overview:
+
+## Format Conversion Matrix
+
+
+```
+                   ┌─────────────────────────────────────────────┐
+                   │              TARGET FORMAT                  │
+                   ├──────────┬──────────┬──────────┬────────────┤
+                   │  DICOM   │  NIfTI   │   NRRD   │  PNG/JPEG  │
+┌───────┬──────────┼──────────┼──────────┼──────────┼────────────┤
+│       │  DICOM   │    -     │ SimpleITK│ SimpleITK│  pydicom + │
+│ S     │          │          │ dcm2niix │          │  Pillow    │
+│ O     ├──────────┼──────────┼──────────┼──────────┼────────────┤
+│ U     │  NIfTI   │ SimpleITK│    -     │ SimpleITK│  nibabel + │
+│ R     │          │          │          │          │  Pillow    │
+│ C     ├──────────┼──────────┼──────────┼──────────┼────────────┤
+│ E     │   NRRD   │ SimpleITK│ SimpleITK│    -     │  pynrrd +  │
+│       │          │          │          │          │  Pillow    │
+│       ├──────────┼──────────┼──────────┼──────────┼────────────┤
+│       │ PNG/JPEG │ pydicom  │ nibabel  │  pynrrd  │     -      │
+└───────┴──────────┴──────────┴──────────┴──────────┴────────────┘
+```
+
+
+
+## Core Libraries
+
+**SimpleITK** is probably the most versatile single library for your needs. It can read and write DICOM, NRRD, NIfTI (`.nii`, `.nii.gz`), and common formats—all through a unified API.
+
+```python
+import SimpleITK as sitk
+
+# Read any supported format
+image = sitk.ReadImage("input.nrrd")
+
+# Write to another format
+sitk.WriteImage(image, "output.nii.gz")
+```
+
+**pydicom** is the go-to for DICOM-specific operations (reading metadata, modifying tags, etc.), but it doesn't natively write to NIfTI or NRRD.
+
+**nibabel** specializes in neuroimaging formats (NIfTI, MGH, ANALYZE) and is commonly used in brain imaging pipelines.
+
+**pynrrd** is a lightweight library specifically for NRRD files.
+
+
+
+## Recommended Setup
+
+For a radiology AI workflow, I'd suggest installing:
+
+```bash
+pip install pydicom SimpleITK nibabel pynrrd pillow numpy
+```
+
+| Library      | Best For                                      |
+|--------------|-----------------------------------------------|
+| `SimpleITK`  | General format conversion, image processing   |
+| `pydicom`    | DICOM metadata manipulation, writing DICOM    |
+| `nibabel`    | NIfTI files, neuroimaging pipelines           |
+| `pynrrd`     | Lightweight NRRD read/write                   |
+| `Pillow`     | PNG/JPEG export (2D slices)                   |
+
+
+## Special Mention: dcm2niix
+
+For **DICOM → NIfTI** specifically (especially multi-slice series), `dcm2niix` is the gold standard CLI tool. You can call it from Python:
+
+```python
+import subprocess
+subprocess.run(["dcm2niix", "-o", "output_dir", "dicom_folder"])
+```

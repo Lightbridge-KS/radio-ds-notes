@@ -60,6 +60,10 @@ book:
         - "content/pyradiomics/PyRadiomicsExample.ipynb"
         - "content/pyradiomics/pyradiomics-extract-df.ipynb"
         - "content/pyradiomics/pyradiomics-params-mr.qmd"
+    - part: Radiology Files
+      chapters: 
+        - text: File Conversion Overview
+          href: "content/radiology-data/py-radiology-file-conv.qmd"
     - part: "3D Slicer"
       chapters:
         - "content/slicer/slicer-intro.qmd"
