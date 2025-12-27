@@ -64,6 +64,10 @@ book:
       chapters: 
         - text: File Conversion Overview
           href: "content/radiology-data/py-radiology-file-conv.qmd"
+    - part: Data Governance
+      chapters: 
+        - text: "DICOM PS3.15 Annex E: Summary"
+          href: "content/DICOM/DICOM_PS3.15_Annex_E_Summary.qmd"
     - part: "3D Slicer"
       chapters:
         - "content/slicer/slicer-intro.qmd"

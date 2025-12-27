@@ -1,0 +1,384 @@
+---
+title: "DICOM PS3.15 Annex E: Summary"
+---
+
+
+## Overview
+
+DICOM PS3.15 Annex E defines **Attribute Confidentiality Profiles** for removing and replacing attributes within DICOM datasets that may leak **Individually Identifiable Information (III)**.
+
+**Important Disclaimer from the Standard:**
+> Use of these profiles does NOT guarantee complete de-identification. They should be part of a broader de-identification process that includes determining context, interpreting regulations, and assessing re-identification risk.
+
+
+## De-identification Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    DICOM De-identification Framework                    │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│   ┌─────────────────────────────────────────────────────────────────┐   │
+│   │              BASIC APPLICATION LEVEL PROFILE                    │   │
+│   │    (Extremely conservative - removes most identifying info)     │   │
+│   └─────────────────────────────────────────────────────────────────┘   │
+│                              │                                          │
+│         ┌────────────────────┼────────────────────┐                     │
+│         ▼                    ▼                    ▼                     │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐          │
+│  │  REMOVAL        │  │  RETENTION      │  │  CLEANING       │          │
+│  │  OPTIONS        │  │  OPTIONS        │  │  OPTIONS        │          │
+│  │  (Add removal)  │  │  (Keep info)    │  │  (Process info) │          │
+│  ├─────────────────┤  ├─────────────────┤  ├─────────────────┤          │
+│  │ • Clean Pixel   │  │ • Retain UIDs   │  │ • Clean Desc.   │          │
+│  │   Data          │  │ • Retain Device │  │ • Clean Struct. │          │
+│  │ • Clean Visual  │  │   Identity      │  │   Content       │          │
+│  │   Features      │  │ • Retain Inst.  │  │                 │          │
+│  │ • Clean         │  │   Identity      │  │                 │          │
+│  │   Graphics      │  │ • Retain Pat.   │  │                 │          │
+│  │                 │  │   Chars.        │  │                 │          │
+│  │                 │  │ • Retain Long.  │  │                 │          │
+│  │                 │  │   Dates (Full/  │  │                 │          │
+│  │                 │  │   Modified)     │  │                 │          │
+│  │                 │  │ • Retain Safe   │  │                 │          │
+│  │                 │  │   Private       │  │                 │          │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘          │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+
+## Action Codes Reference
+
+| Code | Action | Description |
+|------|--------|-------------|
+| **D** | Replace with Dummy | Replace with non-zero length dummy value consistent with VR |
+| **Z** | Zero or Dummy | Replace with zero length OR dummy value |
+| **X** | Remove | Remove attribute entirely (including all sequence items) |
+| **K** | Keep | Keep unchanged (for non-sequences); clean sequences recursively |
+| **C** | Clean | Replace with values of similar meaning known not to contain identifying info |
+| **U** | Replace UID | Replace with new UID, internally consistent within instance set |
+| **Z/D** | Z or D | Z unless D required for IOD conformance (Type 2 vs Type 1) |
+| **X/Z** | X or Z | X unless Z required for IOD conformance (Type 3 vs Type 2) |
+| **X/D** | X or D | X unless D required for IOD conformance (Type 3 vs Type 1) |
+| **X/Z/D** | X, Z, or D | Based on IOD conformance requirements (Type 3 vs 2 vs 1) |
+| **X/Z/U*** | X, Z, or U | X unless Z or UID replacement needed for IOD conformance |
+
+
+## Key Tags for Research De-identification
+
+### Patient Direct Identifiers (MUST Remove/Replace)
+
+| Attribute Name | Tag | Basic Profile | Notes |
+|----------------|-----|---------------|-------|
+| Patient's Name | (0010,0010) | **Z** | Replace with zero-length or pseudonym |
+| Patient ID | (0010,0020) | **Z/D** | Replace with study-specific ID |
+| Patient's Birth Date | (0010,0030) | **Z** | Remove or replace |
+| Patient's Birth Time | (0010,0032) | **X** | Remove |
+| Patient's Birth Name | (0010,1005) | **X** | Remove |
+| Patient's Address | (0010,1040) | **X** | Remove |
+| Patient's Telephone Numbers | (0010,2154) | **X** | Remove |
+| Patient's Telecom Information | (0010,2155) | **X** | Remove |
+| Other Patient IDs | (0010,1000) | **X** | Remove |
+| Other Patient IDs Sequence | (0010,1002) | **X** | Remove |
+| Other Patient Names | (0010,1001) | **X** | Remove |
+| Patient's Mother's Birth Name | (0010,1060) | **X** | Remove |
+| Patient Comments | (0010,4000) | **X** | Remove |
+
+
+### Patient Quasi-Identifiers (Consider for Retention Options)
+
+| Attribute Name | Tag | Basic Profile | Retain Pat. Chars. Option |
+|----------------|-----|---------------|---------------------------|
+| Patient's Age | (0010,1010) | X | **K** (Keep) |
+| Patient's Sex | (0010,0040) | Z | **K** (Keep) |
+| Patient's Size | (0010,1020) | X | **K** (Keep) |
+| Patient's Weight | (0010,1030) | X | **K** (Keep) |
+| Ethnic Group | (0010,2160) | X | **K** (Keep) |
+| Smoking Status | (0010,21A0) | X | **K** (Keep) |
+| Occupation | (0010,2180) | X | - |
+
+
+### Dates and Times
+
+| Attribute Name | Tag | Basic Profile | Retain Long. Full Dates | Retain Long. Modif. Dates |
+|----------------|-----|---------------|-------------------------|---------------------------|
+| Study Date | (0008,0020) | Z | **K** | **C** (shift) |
+| Study Time | (0008,0030) | Z | **K** | **C** (shift) |
+| Series Date | (0008,0021) | X/D | **K** | **C** (shift) |
+| Series Time | (0008,0031) | X/D | **K** | **C** (shift) |
+| Acquisition Date | (0008,0022) | X/Z | **K** | **C** (shift) |
+| Acquisition Time | (0008,0032) | X/Z | **K** | **C** (shift) |
+| Content Date | (0008,0023) | Z/D | **K** | **C** (shift) |
+| Content Time | (0008,0033) | Z/D | **K** | **C** (shift) |
+| Instance Creation Date | (0008,0012) | X | **K** | **C** (shift) |
+| Instance Creation Time | (0008,0013) | X/Z | **K** | **C** (shift) |
+
+
+### UIDs (Unique Identifiers)
+
+| Attribute Name | Tag | Basic Profile | Retain UIDs Option |
+|----------------|-----|---------------|-------------------|
+| SOP Instance UID | (0008,0018) | **U** | **K** (Keep) |
+| Study Instance UID | (0020,000D) | **U** | **K** (Keep) |
+| Series Instance UID | (0020,000E) | **U** | **K** (Keep) |
+| Frame of Reference UID | (0020,0052) | **U** | **K** (Keep) |
+| Acquisition UID | (0008,0017) | **U** | **K** (Keep) |
+| Media Storage SOP Instance UID | (0002,0003) | **U** | **K** (Keep) |
+
+
+### Institution and Device Identifiers
+
+| Attribute Name | Tag | Basic Profile | Retain Dev. Id. | Retain Inst. Id. |
+|----------------|-----|---------------|-----------------|------------------|
+| Institution Name | (0008,0080) | X/Z/D | - | **K** |
+| Institution Address | (0008,0081) | X | - | **K** |
+| Institutional Dept. Name | (0008,1040) | X | - | **K** |
+| Station Name | (0008,1010) | X/Z/D | **K** | - |
+| Manufacturer | (0008,0070) | X/Z | **K** | - |
+| Manufacturer's Model Name | (0008,1090) | X/Z | **K** | - |
+| Device Serial Number | (0018,1000) | X/Z | **K** | - |
+| Gantry ID | (0018,1008) | X | **K** | - |
+| Generator ID | (0018,1005) | X | **K** | - |
+
+
+### Personnel Information
+
+| Attribute Name | Tag | Basic Profile | Notes |
+|----------------|-----|---------------|-------|
+| Referring Physician's Name | (0008,0090) | **Z** | Remove/Replace |
+| Performing Physician's Name | (0008,1050) | **X** | Remove |
+| Operators' Name | (0008,1070) | **X/Z/D** | Remove |
+| Physician(s) of Record | (0008,1048) | **X** | Remove |
+| Name of Physician(s) Reading Study | (0008,1060) | **X** | Remove |
+| Consulting Physician's Name | (0008,009C) | **Z** | Remove/Replace |
+
+
+### Descriptions and Comments (Potential Free-Text PHI)
+
+| Attribute Name | Tag | Basic Profile | Clean Desc. Option |
+|----------------|-----|---------------|-------------------|
+| Study Description | (0008,1030) | X | **C** (Clean) |
+| Series Description | (0008,103E) | X | **C** (Clean) |
+| Image Comments | (0020,4000) | X | **C** (Clean) |
+| Additional Patient History | (0010,21B0) | X | **C** (Clean) |
+| Admitting Diagnoses Description | (0008,1080) | X | **C** (Clean) |
+| Acquisition Protocol Description | (0018,9424) | X | **C** (Clean) |
+
+
+### Accession and Order Numbers
+
+| Attribute Name | Tag | Basic Profile | Notes |
+|----------------|-----|---------------|-------|
+| Accession Number | (0008,0050) | **Z** | Remove or replace |
+| Study ID | (0020,0010) | **Z** | Remove or replace |
+| Admission ID | (0038,0010) | **X** | Remove |
+| Service Episode ID | (0038,0060) | **X** | Remove |
+
+
+### Private Attributes
+
+| Situation | Action |
+|-----------|--------|
+| Basic Profile | **Remove all private attributes** |
+| Retain Safe Private Option | Keep only numeric VR private attributes (US, SS, UL, SL, FL, FD, IS, DS) |
+
+
+## De-identification Options Summary
+
+### Removal Options (Add More Restrictions)
+
+| Option | Purpose |
+|--------|---------|
+| **Clean Pixel Data** | Remove burned-in annotations in pixel data (common in US, XA) |
+| **Clean Recognizable Visual Features** | Remove/distort pixels allowing facial recognition (CT/MR head) |
+| **Clean Graphics** | Remove identifying info in overlays, text annotations |
+
+
+### Retention Options (Preserve Information)
+
+| Option | What It Retains | Use Case |
+|--------|-----------------|----------|
+| **Retain UIDs** | All DICOM UIDs | Linking studies, longitudinal research |
+| **Retain Device Identity** | Equipment info (manufacturer, model, serial) | QA studies, device performance research |
+| **Retain Institution Identity** | Hospital/department info | Multi-site studies, registries |
+| **Retain Patient Characteristics** | Age, sex, size, weight, ethnicity | Clinical research requiring demographics |
+| **Retain Longitudinal Full Dates** | Original dates/times unchanged | Time-series analysis requiring exact dates |
+| **Retain Longitudinal Modified Dates** | Shifted dates (consistent offset) | Longitudinal studies needing relative timing |
+| **Retain Safe Private** | Numeric private attributes | Vendor-specific technical data |
+
+
+### Cleaning Options (Process Information)
+
+| Option | What It Does |
+|--------|--------------|
+| **Clean Descriptors** | Replace free-text descriptions with non-identifying versions |
+| **Clean Structured Content** | Clean SR content items that may contain identifiers |
+
+
+## Research Scenario Recommendations
+
+### Scenario 1: Teaching Files / Publications
+```
+Profile: Basic Application Level Confidentiality Profile
+Options: + Clean Pixel Data (if US/XA)
+         + Clean Graphics
+         + Clean Descriptors
+
+Result: Maximum de-identification, minimal data retained
+```
+
+
+### Scenario 2: Clinical Trials (Cross-sectional)
+```
+Profile: Basic Application Level Confidentiality Profile
+Options: + Retain Patient Characteristics
+         + Retain Device Identity
+         + Clean Pixel Data (if US/XA)
+
+Result: Preserve clinical/technical data, new UIDs for linkage
+```
+
+
+### Scenario 3: Longitudinal Research
+```
+Profile: Basic Application Level Confidentiality Profile
+Options: + Retain UIDs (for linking studies)
+         + Retain Patient Characteristics
+         + Retain Longitudinal Modified Dates (date shifting)
+         + Clean Descriptors
+
+Result: Enable study linking while protecting identity
+```
+
+
+### Scenario 4: AI Training / Multi-Site Research
+```
+Profile: Basic Application Level Confidentiality Profile
+Options: + Retain Patient Characteristics
+         + Retain Device Identity
+         + Retain Institution Identity
+         + Clean Pixel Data
+         + Clean Recognizable Visual Features (if head imaging)
+
+Result: Preserve technical/demographic data, site info for batch effects
+```
+
+
+### Scenario 5: Registry Submission
+```
+Profile: Basic Application Level Confidentiality Profile
+Options: + Retain Institution Identity
+         + Retain Device Identity
+         + Retain Longitudinal Full Dates
+         + Clean Descriptors
+
+Result: Support quality metrics, dose tracking
+```
+
+
+## Implementation Workflow
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                     De-identification Workflow                       │
+└─────────────────────────────────────────────────────────────────────┘
+                                   │
+                                   ▼
+              ┌─────────────────────────────────────┐
+              │  1. DETERMINE CONTEXT               │
+              │     • Research purpose              │
+              │     • Data recipients               │
+              │     • Applicable regulations        │
+              │     • Re-identification risk        │
+              └─────────────────────────────────────┘
+                                   │
+                                   ▼
+              ┌─────────────────────────────────────┐
+              │  2. SELECT PROFILE & OPTIONS        │
+              │     • Basic Profile (mandatory)     │
+              │     • Add removal options           │
+              │     • Add retention options         │
+              └─────────────────────────────────────┘
+                                   │
+                                   ▼
+              ┌─────────────────────────────────────┐
+              │  3. PROCESS DICOM DATA              │
+              │     • Apply attribute actions       │
+              │     • Handle sequences recursively  │
+              │     • Maintain UID consistency      │
+              │     • Optional: Encrypt originals   │
+              └─────────────────────────────────────┘
+                                   │
+                                   ▼
+              ┌─────────────────────────────────────┐
+              │  4. ADD MARKERS                     │
+              │     • Patient Identity Removed=YES  │
+              │     • De-identification Method      │
+              │     • De-identification Method      │
+              │       Code Sequence                 │
+              └─────────────────────────────────────┘
+                                   │
+                                   ▼
+              ┌─────────────────────────────────────┐
+              │  5. VERIFY & DOCUMENT               │
+              │     • Verify all actions applied    │
+              │     • Document in Conformance Stmt  │
+              │     • Maintain audit trail          │
+              └─────────────────────────────────────┘
+```
+
+
+## Key Tags to Add After De-identification
+
+| Attribute | Tag | Value |
+|-----------|-----|-------|
+| Patient Identity Removed | (0012,0062) | **YES** |
+| De-identification Method | (0012,0063) | Text description of method |
+| De-identification Method Code Sequence | (0012,0064) | Codes from CID 7050 |
+| Longitudinal Temporal Information Modified | (0028,0303) | REMOVED / MODIFIED |
+| Burned In Annotation | (0028,0301) | NO (if Clean Pixel Data applied) |
+| Recognizable Visual Features | (0028,0302) | NO (if Clean Visual Features applied) |
+
+
+## Quick Reference: Most Critical Tags
+
+```
+ALWAYS REMOVE/REPLACE (Direct Identifiers):
+├── (0010,0010) Patient's Name
+├── (0010,0020) Patient ID  
+├── (0010,0030) Patient's Birth Date
+├── (0010,1040) Patient's Address
+├── (0010,2154) Patient's Telephone Numbers
+└── (0010,1000) Other Patient IDs
+
+ALWAYS REPLACE UIDs:
+├── (0008,0018) SOP Instance UID
+├── (0020,000D) Study Instance UID
+├── (0020,000E) Series Instance UID
+└── (0020,0052) Frame of Reference UID
+
+REMOVE UNLESS NEEDED:
+├── (0008,0020) Study Date        → Keep if longitudinal
+├── (0008,0030) Study Time        → Keep if longitudinal
+├── (0010,1010) Patient's Age     → Keep if needed for research
+├── (0010,0040) Patient's Sex     → Keep if needed for research
+├── (0008,0080) Institution Name  → Keep if multi-site study
+└── (0008,1010) Station Name      → Keep if device study
+
+ALWAYS CHECK (Free Text PHI):
+├── (0008,1030) Study Description
+├── (0008,103E) Series Description
+├── (0020,4000) Image Comments
+├── (0010,21B0) Additional Patient History
+└── All private attributes
+```
+
+
+## References
+
+- DICOM PS3.15 - Security and System Management Profiles
+- DICOM PS3.16 - Content Mapping Resource (CID 7050 for de-identification codes)
+- NIST Special Publication 800-188: De-Identifying Government Data
+- HIPAA Safe Harbor Method (18 identifiers)
+- GDPR Article 4(5) - Definition of Pseudonymization
