@@ -23,6 +23,8 @@ book:
     - part: OMOP 
       chapters: 
         - "content/CDM/cdm-omop-sql-explained.qmd"
+        - text: Auto-OMOP ETL Generation
+          href: "content/CDM/OMOP-ETL-Automation.qmd"
     - part: CDM — Map
       chapters: 
         - "content/CDM/ConceptMap/FHIR-ConceptMap.qmd"
