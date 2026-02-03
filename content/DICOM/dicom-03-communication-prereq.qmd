@@ -1,0 +1,138 @@
+---
+title: "DICOM Network Operations: SCU/SCP Requirements"
+---
+
+## Basic Concepts
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    DICOM Network Model                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│   SCU (Service Class User)         SCP (Service Class Provider) │
+│   ─────────────────────────        ──────────────────────────── │
+│   • The "Client" / Requester       • The "Server" / Responder   │
+│   • Initiates the connection       • Listens on a port          │
+│   • Sends the request              • Processes and responds     │
+│                                                                 │
+│        ┌─────────┐    Request     ┌─────────┐                   │
+│        │   SCU   │ ─────────────► │   SCP   │                   │
+│        │         │ ◄───────────── │         │                   │
+│        └─────────┘    Response    └─────────┘                   │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## What SCU Needs to Know
+
+To **initiate** a DICOM connection, the SCU must know:
+
+| Parameter | Description |
+|-----------|-------------|
+| **SCP's IP Address** | Where to connect |
+| **SCP's Port** | Which port SCP is listening on |
+| **SCP's AE Title** | Identity of the target (Called AE) |
+| **Own AE Title** | Identity of itself (Calling AE) |
+
+## Comparison Table: DICOM Operations
+
+| Operation | Purpose | Direction of **Data Flow** | SCU Requires | SCP Requires |
+|-----------|---------|---------------------------|--------------|--------------|
+| **C-ECHO** | Verify connectivity ("ping") | SCU → SCP (just handshake) | SCP's IP, Port, AE Title + Own AE Title | Own IP, Port, AE Title configured |
+| **C-FIND** | Query/Search for studies | SCU → SCP (query), SCP → SCU (results) | SCP's IP, Port, AE Title + Own AE Title | Own IP, Port, AE Title configured |
+| **C-STORE** | Push images to destination | SCU → SCP (images) | SCP's IP, Port, AE Title + Own AE Title | Own IP, Port, AE Title configured |
+| **C-GET** | Pull images (same connection) | SCU → SCP (request), SCP → SCU (images on same assoc.) | SCP's IP, Port, AE Title + Own AE Title | Own IP, Port, AE Title + **SCU must also be C-STORE SCP** |
+| **C-MOVE** | Pull images (separate connection) | SCU → SCP (request), SCP → **Move Dest** (images) | SCP's IP, Port, AE Title + Own AE Title + Move Dest AE | Own IP, Port, AE Title + **Must know Move Dest's IP, Port, AE** |
+
+## Visual Flow Diagrams
+
+### C-ECHO, C-FIND, C-STORE (Simple)
+
+```
+┌──────────────┐                      ┌──────────────┐
+│     SCU      │                      │     SCP      │
+│              │   1. Association     │              │
+│  AE: SLICER  │ ──────────────────►  │ AE: ORTHANC  │
+│              │   (to IP:Port)       │ localhost    │
+│              │                      │ :4242        │
+│              │   2. Request         │              │
+│              │ ──────────────────►  │              │
+│              │                      │              │
+│              │   3. Response        │              │
+│              │ ◄──────────────────  │              │
+└──────────────┘                      └──────────────┘
+
+SCU needs: SCP's IP (localhost), Port (4242), AE (ORTHANC)
+         + its own AE (SLICER)
+```
+
+### C-GET (Same Connection, Role Reversal)
+
+```
+┌──────────────┐                      ┌──────────────┐
+│  SCU + SCP   │                      │  SCP + SCU   │
+│   (C-GET)    │                      │   (C-GET)    │
+│              │   1. Association     │              │
+│  AE: SLICER  │ ──────────────────►  │ AE: ORTHANC  │
+│              │                      │              │
+│              │   2. C-GET Request   │              │
+│              │ ──────────────────►  │              │
+│              │                      │              │
+│              │   3. C-STORE (imgs)  │              │
+│   Must act   │ ◄──────────────────  │ Sends images │
+│   as Store   │   (role reversal)    │ back as SCU  │
+│     SCP      │                      │              │
+└──────────────┘                      └──────────────┘
+
+⚠️  SCU must ALSO support C-STORE SCP role on same association
+```
+
+### C-MOVE (Separate Connection)
+
+```
+┌──────────────┐                      ┌──────────────┐
+│     SCU      │   1. C-MOVE Req      │     SCP      │
+│  AE: SLICER  │ ──────────────────►  │ AE: ORTHANC  │
+│              │  "Send to SLICER"    │              │
+└──────────────┘                      └──────┬───────┘
+       ▲                                     │
+       │                                     │ 2. SCP looks up
+       │                                     │    SLICER's IP:Port
+       │                                     ▼
+       │                              ┌──────────────┐
+       │   3. NEW Connection          │ PACS Config  │
+       │      C-STORE images          │ DicomModali- │
+       └──────────────────────────────│ ties table   │
+                                      └──────────────┘
+
+⚠️  SCP must have SCU's IP, Port, AE pre-configured!
+```
+
+## Your Setup Example
+
+```
+┌─────────────────┐                    ┌─────────────────┐
+│  Your App       │                    │  Orthanc        │
+│  (e.g., DCMTK)  │                    │  (Local PACS)   │
+│                 │                    │                 │
+│  AE: DCMTK      │ ────────────────►  │  AE: ORTHANC    │
+│  127.0.0.1      │                    │  localhost      │
+│  :11112         │                    │  :4242          │
+└─────────────────┘                    └─────────────────┘
+
+For C-MOVE to work: Orthanc needs DCMTK's IP:Port configured
+                    (already done in your configMacOS.json ✓)
+```
+
+## Summary Table: Who Needs What
+
+| Parameter | SCU Must Know | SCP Must Know |
+|-----------|---------------|---------------|
+| **Own AE Title** | ✅ Yes | ✅ Yes |
+| **Own IP** | ❌ Not needed | ✅ Yes (to bind/listen) |
+| **Own Port** | ❌ (ephemeral OK) | ✅ Yes (to listen) |
+| **Remote AE Title** | ✅ Yes (Called AE) | ⚠️ Only for C-MOVE dest |
+| **Remote IP** | ✅ Yes | ⚠️ Only for C-MOVE dest |
+| **Remote Port** | ✅ Yes | ⚠️ Only for C-MOVE dest |
+
+**Key Insight**: For **C-MOVE**, the SCP needs a "phone book" (`DicomModalities` in your config) to know where to send images. For **C-GET**, this isn't needed since images flow back on the same connection.

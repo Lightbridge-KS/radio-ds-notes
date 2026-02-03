@@ -50,6 +50,8 @@ book:
       chapters: 
         - "content/DICOM/dicom-01-communication.qmd"
         - "content/DICOM/dicom-02-AE.qmd"
+        - text: DICOM SCU/SCP Requirement
+          href: "content/DICOM/dicom-03-communication-prereq.qmd"
         - "content/DICOM/dicom-fo-dicom.qmd"
         - "content/DICOM/dicom-pynetdicom.qmd"
         - "content/DICOM/dicom-net-libray.qmd"
