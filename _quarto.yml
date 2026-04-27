@@ -75,6 +75,7 @@ book:
     - part: "3D Slicer"
       chapters:
         - "content/slicer/slicer-intro.qmd"
+        - "content/slicer/slicer-jupyter-docker-vscode-setup.qmd"
         - "content/slicer/slicer-MR-field-correct.qmd"
         - "content/slicer/slicer-segment.qmd"
     - part: "LLM"

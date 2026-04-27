@@ -1,0 +1,274 @@
+---
+title: "SlicerJupyter via Docker and VS Code"
+---
+
+A practical walkthrough for running 3D Slicer as a Jupyter kernel through Docker
+and connecting to it from VS Code on macOS (Apple Silicon).
+
+> **Date:** 2026-04-27
+> **Tested on:** macOS (Apple M3 Pro), Docker Desktop 28.x, VS Code with the
+> `ms-toolsai.jupyter` extension.
+
+---
+
+## Why this approach
+
+The official `SlicerJupyter` extension is currently **not in the
+`Slicer/ExtensionsIndex`** for any OS, and the upstream repo has no CI runs.
+Building it from source on macOS requires first building 3D Slicer from source
+(~3–5 hours, ~30 GB), then a SuperBuild of `xeus`, `xeus-zmq`, `xeus-python`,
+ZeroMQ, and `pybind11`.
+
+The Docker image `slicer/slicer-notebook:latest` ships a pre-built Linux Slicer
+with the SlicerJupyter kernel already integrated, avoiding the entire native
+build problem.
+
+### Caveats to know up front
+
+- **The image was last updated 2020-05-12.** It bundles a Slicer ~4.10/4.11-era
+  build, not the 5.10 you have installed locally. Most of `slicer.util.*` and
+  the core MRML APIs work, but anything added in the 5.x line will not be
+  present.
+- **It is amd64-only.** On Apple Silicon it runs through Rosetta/QEMU emulation.
+  Kernel start takes 20–60 s on first launch; per-cell execution after that is
+  fine.
+
+If parity with Slicer 5.10 matters more than convenience, building from source
+is the alternative — not covered here.
+
+---
+
+## Architecture overview
+
+```
+┌─────────────────────────┐                  ┌────────────────────────────┐
+│  VS Code (.ipynb)       │   ws://:8888/    │  Container                 │
+│  Jupyter extension      │ ───────────────▶ │  jupyter-notebook server   │
+│                         │                  │         │                  │
+│  shows kernel:          │                  │         ▼                  │
+│  "Slicer 4.11"          │                  │  Slicer (xeus kernel)      │
+│                         │   tcp://:49053   │  + JupyterNotebooksLib     │
+│  ◀──── widgets/images ──┼──────────────────┤                            │
+└─────────────────────────┘                  └────────────────────────────┘
+```
+
+Two ports matter:
+
+| Port    | Purpose                                                                |
+|---------|------------------------------------------------------------------------|
+| `8888`  | Jupyter notebook HTTP/WebSocket server (VS Code talks to this).        |
+| `49053` | Slicer kernel back-channel for image / widget round-trips. Required.   |
+
+Forgetting `49053` is the most common cause of *"kernel started but nothing
+renders"*.
+
+---
+
+## Prerequisites
+
+- **Docker Desktop** running. Verify with:
+
+  ```bash
+  docker --version
+  ```
+
+- **VS Code** with the **Jupyter** extension installed (`ms-toolsai.jupyter`).
+
+- The image already pulled (run once):
+
+  ```bash
+  docker pull --platform linux/amd64 slicer/slicer-notebook:latest
+  ```
+
+  ~711 MB compressed, ~2 GB unpacked.
+
+---
+
+## Step 1 — Pick a host folder for notebooks
+
+Following the `_playground/` convention, create a session folder:
+
+```bash
+mkdir -p ~/OSS/SlicerJupyter/_playground/2026-04-27_slicer-notebook
+```
+
+This is mounted into the container at `/home/sliceruser/work` so notebooks
+persist even when the container is removed.
+
+---
+
+## Step 2 — Start the container
+
+```bash
+docker run --rm -d \
+  --name slicer-notebook \
+  --platform linux/amd64 \
+  -p 8888:8888 \
+  -p 49053:49053 \
+  -v ~/OSS/SlicerJupyter/_playground/2026-04-27_slicer-notebook:/home/sliceruser/work \
+  slicer/slicer-notebook:latest
+```
+
+Flag reference:
+
+| Flag                        | Why                                                       |
+|-----------------------------|-----------------------------------------------------------|
+| `--rm`                      | Auto-remove the container on stop. State is in the volume.|
+| `-d`                        | Detached — your shell returns immediately.                |
+| `--name slicer-notebook`    | Stable name for `docker stop` / `docker logs` later.      |
+| `--platform linux/amd64`    | Explicit emulation target on Apple Silicon.               |
+| `-p 8888:8888`              | Jupyter UI / API.                                         |
+| `-p 49053:49053`            | Slicer kernel back-channel. **Do not omit.**              |
+| `-v <host>:/home/sliceruser/work` | Persistent notebook storage on host.                |
+
+---
+
+## Step 3 — Get the Jupyter URL + token
+
+```bash
+docker logs slicer-notebook 2>&1 \
+  | grep -E 'http://(127\.0\.0\.1|0\.0\.0\.0):8888' \
+  | tail -1
+```
+
+Output looks like:
+
+```
+http://127.0.0.1:8888/?token=abc123def456...
+```
+
+The token is what VS Code needs in the next step. Copy the full URL.
+
+---
+
+## Step 4 — Connect from VS Code
+
+1. Open or create a `.ipynb` file in the session folder you mounted in Step 1.
+   (VS Code can edit it locally; execution happens in the container.)
+
+2. Click the **kernel picker** in the top-right of the notebook. It usually
+   shows the current kernel name or *"Select Kernel"*.
+
+3. Walk through these prompts:
+
+   ```
+   Select Another Kernel...
+       ↓
+   Existing Jupyter Server...
+       ↓
+   Enter the URL of the running Jupyter server
+       ↓
+   Paste the URL from Step 3 (with the token)
+       ↓
+   Display name? → press Enter to accept the default
+   ```
+
+4. The kernel list now includes the **remote server's kernels**. Pick:
+
+   ```
+   Slicer 4.11      (or whichever Slicer version the image reports)
+   ```
+
+   *Not* "Python 3". The point of this whole setup is that cells execute inside
+   a real Slicer process, not plain Python.
+
+---
+
+## Step 5 — Sanity check
+
+Run this in the first cell:
+
+```python
+import slicer
+print(slicer.app.applicationVersion)
+
+import JupyterNotebooksLib as slicernb
+slicernb.ViewDisplay()       # static snapshot of the 3D view
+```
+
+Expected:
+
+- `applicationVersion` prints something like `4.11.x` (this confirms you are
+  inside Slicer, not in plain Python).
+- `ViewDisplay()` returns an embedded image of the (empty) 3D view.
+
+If `ViewDisplay()` errors with anything mentioning `49053` or a connection
+refusal, port `49053` was not forwarded — recreate the container with
+`-p 49053:49053`.
+
+For interactive control, try:
+
+```python
+slicernb.ViewInteractiveWidget()
+```
+
+This uses `ipyevents` + `ipycanvas`. It usually works in VS Code, but
+interactive widgets are the most fragile layer across Jupyter clients. If it
+misbehaves, fall back to repeated `ViewDisplay()` calls (static frames always
+work).
+
+---
+
+## Day-to-day commands
+
+```bash
+# Stop the container (mounted volume contents are preserved)
+docker stop slicer-notebook
+
+# Start it again later (same flags as Step 2)
+docker run --rm -d --name slicer-notebook --platform linux/amd64 \
+  -p 8888:8888 -p 49053:49053 \
+  -v ~/OSS/SlicerJupyter/_playground/2026-04-27_slicer-notebook:/home/sliceruser/work \
+  slicer/slicer-notebook:latest
+
+# Re-fetch the token if you lost it
+docker logs slicer-notebook 2>&1 | grep token | tail -1
+
+# Open a shell in the running container
+docker exec -it slicer-notebook bash
+
+# Remove the image entirely (frees ~2 GB)
+docker rmi slicer/slicer-notebook:latest
+```
+
+---
+
+## Troubleshooting
+
+### "Kernel starts but nothing renders / images blank"
+Port `49053` is not forwarded. Stop the container, recreate with both
+`-p 8888:8888` and `-p 49053:49053`.
+
+### "VS Code says the server is unreachable"
+- Container actually running? `docker ps` should list `slicer-notebook`.
+- Token still valid? Re-fetch it via `docker logs` — every container start
+  generates a fresh token.
+
+### "Kernel takes forever to start"
+First-launch on Apple Silicon goes through QEMU translation; 20–60 s is normal.
+Subsequent kernel starts in the same container session are faster.
+
+### "Function X from `slicer.util` doesn't exist"
+The image's Slicer is from 2020. APIs added in 5.x will be missing. Check
+`slicer.app.applicationVersion` to confirm you're on the older build, then
+either rewrite using older equivalents or move to building from source.
+
+### "Widgets show but don't update on mouse move"
+Known fragility of `ipyevents` over remote Jupyter in VS Code. Try the same
+notebook in JupyterLab in a browser at `http://127.0.0.1:8888/?token=...` to
+isolate whether it's a VS Code issue or a kernel issue.
+
+---
+
+## File / path summary
+
+| Where                                                                | What                                  |
+|----------------------------------------------------------------------|---------------------------------------|
+| `~/OSS/SlicerJupyter/_playground/2026-04-27_slicer-notebook/`        | Notebooks, on the host, persistent.   |
+| `/home/sliceruser/work` (inside container)                           | Same folder, container-side mount.    |
+| `slicer/slicer-notebook:latest`                                      | Docker image (2020-05-12, amd64).     |
+
+---
+
+*Generated as a working note alongside the SlicerJupyter repo at
+`/Users/kittipos/OSS/SlicerJupyter`.*
