@@ -76,6 +76,7 @@ book:
       chapters:
         - "content/slicer/slicer-intro.qmd"
         - "content/slicer/slicer-jupyter-docker-vscode-setup.qmd"
+        - "content/slicer/slicer-webserver-surface-report.qmd"
         - "content/slicer/slicer-MR-field-correct.qmd"
         - "content/slicer/slicer-segment.qmd"
     - part: "LLM"
